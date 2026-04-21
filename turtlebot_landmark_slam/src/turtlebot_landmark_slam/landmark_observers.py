@@ -1,38 +1,19 @@
-#!/usr/bin/env python3
-
 import numpy as np
 import matplotlib.pyplot as plt
-
-import rclpy
-from rclpy.node import Node
-from sensor_msgs.msg import LaserScan, PointCloud
-
 from matplotlib.patches import Circle as pltCircle
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
 
-class MinimalPublisher(Node):
-    def __init__(self):
-        # Initialize node with the name 'minimal_publisher'
-        super().__init__('live_detection_node')
-        
-        # Create a publisher for 'topic' with queue size of 10
-        self.scan_subscription = self.create_subscription(
-            LaserScan,
-            'scan',
-            self._scan_callback,
-            10)
-        
-        # live detections plot
+class lidarLandmarkObserver:
+    def __init__(self, liveDisplay):
         self.fig, self.ax = plt.subplots(figsize=(10, 8))
-        
 
-    def _scan_callback(self, msg):
-        print("[raw] Scan callback fired")
-        points = self._laserscan_to_points(msg)
-        detections = extract_circular_objects(points)
+        assert type(liveDisplay) == bool 
+        self.showDisplay= liveDisplay
 
+    def _updateLiveDisplay(self, points, detections):
         self.ax.clear()
         self.ax.set_aspect("equal")
+
         # Robotic convention: x forward (up), y left (left).
         # Map: plot horizontal = robot Y (inverted), plot vertical = robot X.
         self.ax.set_xlabel("Y (meters)")
@@ -93,14 +74,11 @@ class MinimalPublisher(Node):
                 f"Circle {i+1}: ({c.center[0]}, {c.center[1]}) --> range={rng:.3f} m, bearing={np.degrees(bearing):.2f} deg, "
                 f"radius={c.radius:.3f} m, mse={c.mse:.2e} units, span={c.span:.3e}"
             )
+
         self.ax.legend(loc="upper right")
         plt.tight_layout()
         plt.draw()
         plt.pause(0.001)
-
-        return
-        
-
 
     def _laserscan_to_points(self, msg):
         angles = msg.angle_min + np.arange(len(msg.ranges)) * msg.angle_increment
@@ -115,19 +93,24 @@ class MinimalPublisher(Node):
             ]
         )
 
+    def attemptAssociation(self, msg):
+        points = self._laserscan_to_points(msg)
+        detections = extract_circular_objects(points,
+                distance_threshold=0.05,        # 0.05
+                min_points=4,
+                max_radius=0.2,                 # 0.2          -- higest reading was 0.18
+                min_radius=0.1,                 # 0.1          -- lowest reading was 0.11
+                max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
+                max_aspect_ratio=None,          # None
+                min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives
+                min_center_range=None,
+                polar=False,)
 
-def main(args=None):
-    rclpy.init(args=args)
-    minimal_publisher = MinimalPublisher()
-    
-    try:
-        rclpy.spin(minimal_publisher)
-    except KeyboardInterrupt:
-        pass
-    finally:
-        # Clean up
-        minimal_publisher.destroy_node()
-        rclpy.shutdown()
+        if self.showDisplay:
+            self._updateLiveDisplay(points, detections)
 
-if __name__ == '__main__':
-    main()
+        
+        # assoicate detections w/ with tag...
+
+
+

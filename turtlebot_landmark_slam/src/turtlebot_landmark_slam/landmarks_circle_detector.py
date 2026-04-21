@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle as pltCircle
 from dataclasses import dataclass
 
+# Fox
+# adapted from ari's version, just includes span in circleFit data
 
 @dataclass
 class CircleFit:
@@ -23,6 +25,8 @@ class CircleFit:
     polar: bool
     # 3x3 covariance matrix for (cx, cy, radius) or (range, bearing, radius) if polar=True
     covariance: np.ndarray
+
+    span: float
 
 
 def cluster_points(scan_points, distance_threshold):
@@ -59,13 +63,13 @@ def cluster_points(scan_points, distance_threshold):
 
 def extract_circular_objects(
     scan_points,
-    distance_threshold=0.05,
+    distance_threshold=0.05, # 0.05
     min_points=4,
-    max_radius=0.12,
-    min_radius=0.06,
-    max_mse=1.0e-5,
-    max_aspect_ratio=None,
-    min_arc_angle=None,
+    max_radius=0.2,                 # 0.12          -- higest reading was 0.18
+    min_radius=0.1,                 # 0.06          -- lowest reading was 0.11
+    max_mse=1.0e-4,                      # 1.0e-4        -- annoying corner case
+    max_aspect_ratio=None,          # None
+    min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives
     min_center_range=None,
     polar=False,
 ):
@@ -144,9 +148,9 @@ def extract_circular_objects(
 
         # Reject fits where the cluster points only cover a small arc around the center,
         # which are likely to be corners or partial walls rather than true circular features.
+        angles = np.arctan2(cluster[:, 1] - cy, cluster[:, 0] - cx)
+        arc_span = np.ptp(np.unwrap(angles))
         if min_arc_angle is not None:
-            angles = np.arctan2(cluster[:, 1] - cy, cluster[:, 0] - cx)
-            arc_span = np.ptp(np.unwrap(angles))
             if arc_span < min_arc_angle:
                 continue
 
@@ -188,6 +192,7 @@ def _to_polar(fit: "CircleFit") -> "CircleFit":
         mse=fit.mse,
         covariance=cov_polar,
         polar=True,
+        span=fit.span
     )
 
 
@@ -240,6 +245,9 @@ def fit_circle_with_covariance(points, max_radius=1.5):
     if r > max_radius or r <= 0.01:
         return None
 
+    angles = np.arctan2(y - cy, x - cx)
+    arc_span = np.ptp(np.unwrap(angles))
+
     # --- Phase 3: Quality Metrics and Covariance ---
     # MSE of the geometric fit
     mse = np.mean(opt_res.fun**2)
@@ -268,6 +276,7 @@ def fit_circle_with_covariance(points, max_radius=1.5):
         mse=mse,
         covariance=covariance,
         polar=False,
+        span=arc_span
     )
 
 
@@ -404,7 +413,7 @@ if __name__ == "__main__":
                 ".",
                 color=color,
                 markersize=8,
-                label=f"Circle {i+1}: r={c.radius:.2f}m",
+                label=f"Circle {i+1}: r={c.radius:.2f}m, mse={c.mse:.2e}, span={c.span:.3e}",
                 zorder=3,
             )
             ax.add_patch(
@@ -416,7 +425,7 @@ if __name__ == "__main__":
 
             print(
                 f"  Circle {i+1}: range={rng:.3f} m, bearing={np.degrees(bearing):.2f} deg, "
-                f"radius={c.radius:.3f} m, mse={c.mse:.2e}"
+                f"radius={c.radius:.3f} m, mse={c.mse:.2e} units, span={c.span:.3e}"
             )
 
         ax.legend(loc="upper right")
