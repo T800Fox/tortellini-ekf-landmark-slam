@@ -333,6 +333,7 @@ if __name__ == "__main__":
                 ranges[valid] * np.sin(angles[valid]),
             ]
         )
+    
 
     scans = []
     while reader.has_next():
