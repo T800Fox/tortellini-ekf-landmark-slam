@@ -14,10 +14,9 @@ def generate_launch_description():
                 executable="landmark_publisher_gazebo.py",
                 name="landmark_publisher_gazebo",
                 output="screen",
-                # remappings=[
-                #     ("~/landmarks", "/landmarks"),
-                #     ("~/control", "/cmd_vel"),
-                # ]
+                remappings=[
+                    ("~/landmarks", "/landmarks")
+                ]
             )
         ]
     )

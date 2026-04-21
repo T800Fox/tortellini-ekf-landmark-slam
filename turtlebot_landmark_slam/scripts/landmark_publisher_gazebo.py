@@ -41,6 +41,7 @@ class LandmarkPublisherLiveGazebo(Node):
             lm.s_y = float(l['s_y'])
             landmarks_msg.landmarks.append(lm)
 
+        print("[raw] publishing!")
         self._landmarks_pub.publish(landmarks_msg)
 
 def main(args=None):
