@@ -269,6 +269,7 @@ class lidarLandmarkObserver:
                 newLandmark.id = self._get_placeholder_id()
 
                 self.storedLandmarks.append(newLandmark)
+                
             if len(self.storedLandmarks) > 4:
                 print("Landmark runaway! aborting")
                 exit()
@@ -298,7 +299,7 @@ class lidarLandmarkObserver:
             print(f"\tClosest Landmark is {closest_landmark.id} --> ({closest_landmark.mean[0]}, {closest_landmark.mean[1]})"
                   f" w/ dist ({closest_dist})")
 
-            if 0 < closest_dist and closest_dist < 100:
+            if 0 < closest_dist and closest_dist < 9.21:# 100
                 # association window
                 landmark_match = closest_landmark
 
@@ -315,7 +316,7 @@ class lidarLandmarkObserver:
 
                 
 
-            elif 10000 < closest_dist and closest_dist < 30000:
+            elif 28000 < closest_dist and closest_dist < 60000:
                 # new landmark window
 
                 print(f"\tNew Landmark @ ({d.center[0]},{d.center[1]})")

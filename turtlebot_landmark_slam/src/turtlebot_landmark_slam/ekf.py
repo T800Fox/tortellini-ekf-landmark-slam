@@ -72,11 +72,18 @@ class ExtendedKalmanFilter(object):
 
     def extract_landmark_from_state(self, label, state_mean):
         if label not in self._landmark_index:
-            return None
+            return np.array([-99, -99])
 
         state_index = self._landmark_index[label]
         return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
-    
+
+    def _active_landmarks(self):
+        print("### Currently Tracking ###")
+        for lk in self._landmark_index.keys():
+            l_data = self.extract_landmark_from_state(lk, self.state_mean)
+            print(f"\t{lk} : ({float(l_data[0])},{float(l_data[1])})")
+
+
     @staticmethod
     def reguarlise_matrix(S, l=0.1):
         assert S.shape[0] == S.shape[1], "Matrix S must be square."
@@ -103,7 +110,7 @@ class ExtendedKalmanFilter(object):
         Only the robot-pose block [0:3] of the state and covariance is updated;
         landmark estimates are unaffected by the motion model.
         """
-        print("Predict Called")
+        # print("Predict Called")
 
         motion_command = control.motion_vector
         motion_covariance = control.covariance
@@ -199,4 +206,7 @@ class ExtendedKalmanFilter(object):
         self._state_covariance = np.array(posterior_state_covariance, copy=True)
         
 
-        # pass
+        self._active_landmarks()
+
+    ### 
+
