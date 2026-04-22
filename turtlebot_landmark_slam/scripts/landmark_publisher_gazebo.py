@@ -27,7 +27,7 @@ class LandmarkPublisherLiveGazebo(Node):
             10)
         self.odom_subscription =  self.create_subscription(
             Odometry, 
-            "~/odom", 
+            "ekf/odom", 
             self._odom_callback, 
             10)
         
