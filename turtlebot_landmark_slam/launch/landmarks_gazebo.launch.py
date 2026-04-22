@@ -15,7 +15,8 @@ def generate_launch_description():
                 name="landmark_publisher_gazebo",
                 output="screen",
                 remappings=[
-                    ("~/landmarks", "/landmarks")
+                    ("~/odom", "/odom"),
+                    ("~/landmarks", "/landmarks"),
                 ]
             )
         ]
