@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 
 from nav_msgs.msg import Odometry
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import PointCloud
 from landmarks_msg.msg import LandmarkMsg, LandmarksMsg
 
 import numpy as np
@@ -13,14 +13,12 @@ from turtlebot_landmark_slam.landmark_observers import lidarCylinderObserver
 
 class LandmarkPublisherLiveGazebo(Node):
     def __init__(self):
-        # Initialize node with the name 'minimal_publisher'
-        super().__init__('gazebo_landmarks_node')
+        super().__init__('live_landmarks_node')
         
-
         ## Subscribers ## 
         self.scan_subscription = self.create_subscription(
-            LaserScan,
-            'scan',
+            PointCloud,
+            '/pointcloud2d',
             self._scan_callback,
             10)
         self.odom_subscription =  self.create_subscription(
@@ -42,9 +40,13 @@ class LandmarkPublisherLiveGazebo(Node):
                                                       min_center_range=None,
                                                       polar=False)
 
+
     def _scan_callback(self, msg):
         points = laserscan_to_rel_point(msg)
         landmarks = self.landmarkObserver.attemptAssociation(points)
+
+        if len(landmarks) == 0:
+            return
 
         landmarks_msg = LandmarksMsg()
         for l in landmarks:

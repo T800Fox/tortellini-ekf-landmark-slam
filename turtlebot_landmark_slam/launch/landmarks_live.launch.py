@@ -6,8 +6,8 @@ def generate_launch_description():
         [
             Node(
                 package="turtlebot_landmark_slam",
-                executable="landmark_publisher_gazebo.py",
-                name="landmark_publisher_gazebo",
+                executable="landmark_publisher_live.py",
+                name="landmark_publisher_live",
                 output="screen",
                 remappings=[
                     ("~/odom", "/odom"),
