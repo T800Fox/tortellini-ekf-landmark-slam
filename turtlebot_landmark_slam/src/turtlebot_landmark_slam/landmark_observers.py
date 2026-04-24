@@ -23,11 +23,13 @@ class landmark:
         
 class lidarCylinderObserver:
     def __init__(self, 
+                 abortCount=4,
+                 maxLandmarkDistance=5,
                  liveDisplay=False,
                  distance_threshold=0.05,        # 0.05
                  min_points=4,
-                 max_radius=0.16,                # 0.2          -- higest reading was 0.18
-                 min_radius=0.14,                # 0.1          -- lowest reading was 0.11
+                 max_radius=0.09,                # 0.2          -- higest reading was 0.18
+                 min_radius=0.05,                # 0.1          -- lowest reading was 0.11
                  max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
                  max_aspect_ratio=None,          # None
                  min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives
@@ -36,6 +38,8 @@ class lidarCylinderObserver:
         
         assert type(liveDisplay) == bool 
         self.showDisplay = liveDisplay
+
+        self.maxLandmarks = abortCount
 
         # yes this is ugly, but the same job is being done in both envs. (live vs. gazebo)
         # circle detection may need to be tuned for each one
@@ -50,6 +54,7 @@ class lidarCylinderObserver:
         self.circle_polar = polar
 
         self.storedLandmarks = []   # list of landmarks, LOL
+        self.max_landmark_distance = maxLandmarkDistance # ignore landmarks over (m)
 
         # robot state data for (rel. --> abs.) conversions
         self.robot_x = 0
@@ -82,7 +87,11 @@ class lidarCylinderObserver:
             print('[WARN] No position data skipping...')
             return []
 
-        detections = extract_circular_objects(rel_points,
+        close_points = [[point[0], point[1]] for point in rel_points 
+                       if self._euclidianDistance(0,0, point[0], point[1]) < self.max_landmark_distance]
+        close_points = np.array(close_points)
+
+        detections = extract_circular_objects(close_points,
                 distance_threshold=self.circle_distance_threshold,      
                 min_points=self.circle_min_points,
                 max_radius=self.circle_max_radius,           
@@ -94,7 +103,7 @@ class lidarCylinderObserver:
                 polar=self.circle_polar)
 
         if self.showDisplay:
-            self._updateLiveDisplay(rel_points, detections)
+            self._updateLiveDisplay(close_points, detections)
 
         # convert detections from relative into global frame
         current_pose = np.array([[self.robot_x], [self.robot_y], [self.robot_yaw]])
@@ -119,7 +128,7 @@ class lidarCylinderObserver:
 
                 self.storedLandmarks.append(newLandmark)
                 
-            if len(self.storedLandmarks) > 4:
+            if len(self.storedLandmarks) > self.maxLandmarks:
                 print("Landmark runaway! aborting")
                 exit()
 
@@ -274,6 +283,8 @@ class lidarCylinderObserver:
         self.ax1.set_title(f"Stored Landmarks - Absolute Frame")
         self.ax1.grid(True, linestyle=":", alpha=0.6)
 
+        landmark_size = ( self.circle_min_radius + self.circle_max_radius ) / 2
+
         if self.odom_recieved:
             self.ax1.plot(self.robot_x, self.robot_y, "o", 
                           color="black", 
@@ -288,7 +299,7 @@ class lidarCylinderObserver:
                           label=f"({round(float(l.mean[0]), 4)}, {round(float(l.mean[1]), 4)})")
 
             self.ax1.add_patch(
-                pltCircle((l.mean[0], l.mean[1]), 0.15, color=color, fill=False)
+                pltCircle((l.mean[0], l.mean[1]), landmark_size, color=color, fill=False)
                 )
 
         self.ax1.legend(loc="upper center")
@@ -297,21 +308,31 @@ class lidarCylinderObserver:
         plt.draw()
         plt.pause(0.001)
 
+    def _euclidianDistance(self, x1, y1, x2, y2):
+        dx = float(x2 - x1)
+        dy = float(y2 - y1)    
+
+        return np.sqrt(dx**2 + dy**2)
+
     def _mahalanobisDistance(self, detection_mean, detection_covariance, stored_mean, stored_covariance):
         # Distance between Gaussians, w/ safety! 
         # if mean is too small defaults to, mean = 1e-3 and covariance = 0.3
 
-        dx = float(detection_mean[0] - stored_mean[0])
-        dy = float(detection_mean[1] - stored_mean[1])    
+        mahalanobis_mean = self._euclidianDistance(detection_mean[0], detection_mean[1],
+                                                   stored_mean[0], stored_mean[1])
 
-        # print('dx ->\n', dx)
-        # print('dy ->\n', dy)
-        mahalanobis_mean = np.sqrt(dx**2 + dy**2)
+
+        # # print('dx ->\n', dx)
+        # # print('dy ->\n', dy)
+        # mahalanobis_mean = np.sqrt(dx**2 + dy**2)
 
         mean_floor = 1e-3  # for div. by 0 errors, need small but not zero
         safe_mahalanobis_mean = max(mahalanobis_mean, mean_floor)
 
         # state variable includes radius w/ x and y
+        dx = float(detection_mean[0] - stored_mean[0])
+        dy = float(detection_mean[1] - stored_mean[1])   
+
         J_det = np.array([dx / safe_mahalanobis_mean, dy / safe_mahalanobis_mean, 0])
         J_stored = -J_det # Derivative w.r.t stored point is just the negative
 
@@ -366,3 +387,7 @@ class lidarCylinderObserver:
         return updated_mean, updated_covariance
 
 
+
+
+
+ 

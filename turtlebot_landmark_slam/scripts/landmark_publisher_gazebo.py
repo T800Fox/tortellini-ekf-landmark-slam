@@ -32,6 +32,7 @@ class LandmarkPublisherLiveGazebo(Node):
         ## Publishers ##
         self._landmarks_pub = self.create_publisher(LandmarksMsg, "~/landmarks", 10)
         self.landmarkObserver = lidarCylinderObserver(liveDisplay=True,
+                                                      abortCount=4,
                                                       distance_threshold=0.05,        # 0.05
                                                       min_points=4,
                                                       max_radius=0.16,                # 0.2          -- higest reading was 0.18

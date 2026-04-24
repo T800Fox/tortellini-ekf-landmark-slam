@@ -78,7 +78,9 @@ class Pipeline(object):
 
     def publishState(self):
         """Publish the current EKF state as an Odometry message and a landmark MarkerArray."""
+        print("publish state called...")
         if self._last_odom_time is None:
+            print("blocked due to no last odom.")
             return
 
         self._publishOdometry()

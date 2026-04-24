@@ -23,17 +23,19 @@ class LandmarkPublisherLiveGazebo(Node):
             10)
         self.odom_subscription =  self.create_subscription(
             Odometry, 
-            "ekf/odom", 
+            "/ekf/odom", 
             self._odom_callback, 
             10)
         
         ## Publishers ##
         self._landmarks_pub = self.create_publisher(LandmarksMsg, "~/landmarks", 10)
         self.landmarkObserver = lidarCylinderObserver(liveDisplay=True,
+                                                      abortCount=20,
+                                                      maxLandmarkDistance=1,
                                                       distance_threshold=0.05,        # 0.05
                                                       min_points=4,
-                                                      max_radius=0.16,                # 0.2          -- higest reading was 0.18
-                                                      min_radius=0.14,                # 0.1          -- lowest reading was 0.11
+                                                      max_radius=0.09,                # 0.2          -- higest reading was 0.18
+                                                      min_radius=0.05,                # 0.1          -- lowest reading was 0.11
                                                       max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
                                                       max_aspect_ratio=None,          # None
                                                       min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives
@@ -42,7 +44,7 @@ class LandmarkPublisherLiveGazebo(Node):
 
 
     def _scan_callback(self, msg):
-        points = laserscan_to_rel_point(msg)
+        points = np.array([[p.x, p.y] for p in msg.points], dtype=float)
         landmarks = self.landmarkObserver.attemptAssociation(points)
 
         if len(landmarks) == 0:

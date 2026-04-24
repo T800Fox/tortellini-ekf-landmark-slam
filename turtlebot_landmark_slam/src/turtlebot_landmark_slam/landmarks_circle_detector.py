@@ -65,8 +65,8 @@ def extract_circular_objects(
     scan_points,
     distance_threshold=0.05, # 0.05
     min_points=4,
-    max_radius=0.2,                 # 0.12          -- higest reading was 0.18
-    min_radius=0.1,                 # 0.06          -- lowest reading was 0.11
+    max_radius=0.09,                 # 0.12          -- higest reading was 0.18
+    min_radius=0.05,                 # 0.06          -- lowest reading was 0.11
     max_mse=1.0e-4,                      # 1.0e-4        -- annoying corner case
     max_aspect_ratio=None,          # None
     min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives

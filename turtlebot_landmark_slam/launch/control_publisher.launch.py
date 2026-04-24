@@ -11,17 +11,7 @@ def generate_launch_description():
                 output="screen",
                 remappings=[
                     ("~/odom", "/odom"),
-                ]
-            ),
-            Node(
-                package="turtlebot_landmark_slam",
-                executable="landmark_publisher_live.py",
-                name="landmark_publisher_live",
-                output="screen",
-                remappings=[
-                    ("~/odom", "/odom"),
-                    ("~/landmarks", "/landmarks"),
-                ]
+                ],
             )
         ]
     )
