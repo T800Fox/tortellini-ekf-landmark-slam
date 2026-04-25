@@ -2,19 +2,20 @@
 
 import rclpy
 from rclpy.node import Node
-from turtlebot_landmark_slam.pipeline import Pipeline
-from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
+
+from turtlebot_landmark_slam.ekf_interface import EkfInterface
+from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
 
 
-class EkfPipelineNode(Node):
+class EkfInterfaceNode(Node):
     def __init__(self) -> None:
-        super().__init__("ekf_pipeline")
-        self.pipeline = Pipeline(self, ExtendedKalmanFilter())
+        super().__init__("ekf_interface")
+        self.interface = EkfInterface(self, EkfOrchestrator())
 
 
 def main(args=None) -> None:
     rclpy.init(args=args)
-    node = EkfPipelineNode()
+    node = EkfInterfaceNode()
     executor = rclpy.executors.SingleThreadedExecutor()
     executor.add_node(node)
 
