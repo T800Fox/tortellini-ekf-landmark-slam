@@ -11,10 +11,7 @@ find_package(ament_cmake_python REQUIRED)
 ament_python_install_package(${PROJECT_NAME} PACKAGE_DIR src/${PROJECT_NAME})
 
 install(PROGRAMS
-  scripts/ekf_pipeline_node.py
-  scripts/landmark_publisher_gazebo.py
-  scripts/landmark_publisher_live.py
-  scripts/odom_to_control_republisher.py
+  scripts/ekf_interface_node.py
   scripts/map_writer.py
   scripts/evaluate_map.py
   DESTINATION lib/${PROJECT_NAME}

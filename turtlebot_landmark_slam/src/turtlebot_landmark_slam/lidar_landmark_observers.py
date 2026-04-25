@@ -182,12 +182,15 @@ class CylinderObserver(object):
         for d in detections:
             # just assume the first ever detection isn't a false positive
             if len(current_landmarks) == 0:
-                rel_coords, _, _ = Absolute2RelativeXY(pose, d.center)
+                print('center is ', type(d.center))
+
+                reform_center = np.array([c[0] for c in d.center])
+                rel_coords, _, _ = Absolute2RelativeXY(pose, reform_center)
 
                 measurement_of_initial_landmark = LandmarkMeasurement(
-                    x=rel_coords[0],
-                    y=rel_coords[1],
-                    covariance=d.covariance,
+                    x=float(rel_coords[0]),
+                    y=float(rel_coords[1]),
+                    covariance=d.covariance[0:2, 0:2], # ignore theta
                     label=self.inital_landmark_label,
                     is_new=True
                 )
@@ -217,11 +220,12 @@ class CylinderObserver(object):
 
                 print(f"Picked up {closest_landmark.label} @ ({d.center[0]}, {d.center[1]})")\
                 
-                rel_coords, _, _ = Absolute2RelativeXY(pose, d.center)
+                reform_center = np.array([c[0] for c in d.center])
+                rel_coords, _, _ = Absolute2RelativeXY(pose, reform_center)
                 measurement_of_existing_landmark = LandmarkMeasurement(
-                    x=rel_coords[0],
-                    y=rel_coords[1],
-                    covariance=d.covariance,
+                    x=float(rel_coords[0]),
+                    y=float(rel_coords[1]),
+                    covariance=d.covariance[0:2, 0:2], # ignore theta
                     label=closest_landmark.label,
                     is_new=False
                 )
@@ -235,11 +239,12 @@ class CylinderObserver(object):
 
                 print(f"\tNew Landmark @ ({d.center[0]},{d.center[1]})")
 
-                rel_coords, _, _ = Absolute2RelativeXY(pose, d.center)
+                reform_center = np.array([c[0] for c in d.center])
+                rel_coords, _, _ = Absolute2RelativeXY(pose, reform_center)
                 measurement_of_new_landmark = LandmarkMeasurement(
-                    x=rel_coords[0],
-                    y=rel_coords[1],
-                    covariance=d.covariance,
+                    x=float(rel_coords[0]),
+                    y=float(rel_coords[1]),
+                    covariance=d.covariance[0:2, 0:2], # ignore theta
                     label=self.inital_landmark_label,
                     is_new=True
                 )

@@ -146,6 +146,7 @@ class ExtendedKalmanFilter(object):
         predicted_state_covariance = F @ self.pose_covariance @ F.T + W @ motion_covariance @ W.T
         np.copyto(self._state_covariance[0:3, 0:3], predicted_state_covariance)
 
+
     # ------------------------------------------------------------------
     # EKF update step
     # ------------------------------------------------------------------

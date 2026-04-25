@@ -1,8 +1,11 @@
 import numpy as np
+import math
+from typing import Tuple
+from threading import Lock
 
 import rclpy
 from rclpy.node import Node
-from threading import Lock
+
 
 from sensor_msgs.msg import PointCloud, LaserScan
 from nav_msgs.msg import Odometry
@@ -120,6 +123,10 @@ class EkfInterface(object):
         motion_measurement = ControlMeasurement(dx, dy, dtheta, motion_covariance)
         self._orchestrator.motion_handler(motion_measurement)
 
+        self.publishOdometry(
+            self._orchestrator._ekf.pose,
+            self._orchestrator._ekf.pose_covariance)
+
         
     def _lidar_callback(self, msg):
         if self.is_real:
@@ -128,10 +135,71 @@ class EkfInterface(object):
             points = self._laserscan_to_rel_point(msg)
 
         self._orchestrator.lidar_handler(points)
+
+        self._publishLandmarkMap()
         
 
     # def _image_callback(self, msg):
     #     pass
+
+    def publishOdometry(self, pose, pose_covariance):
+        msg = Odometry()
+        msg.header.stamp = self._last_motion_msg_time.to_msg()
+        msg.header.frame_id = "odom"
+        msg.child_frame_id = "base_link"
+
+        with self._lock:
+            msg.pose.pose.position.x = float(pose[0])
+            msg.pose.pose.position.y = float(pose[1])
+            msg.pose.pose.position.z = 0.0
+
+            quat = self._quaternion_from_yaw(pose[2])
+            msg.pose.pose.orientation.x = quat[0]
+            msg.pose.pose.orientation.y = quat[1]
+            msg.pose.pose.orientation.z = quat[2]
+            msg.pose.pose.orientation.w = quat[3]
+
+            # The ROS2 Odometry covariance is a 6x6 matrix (row-major, 36 elements)
+            # for [x, y, z, roll, pitch, yaw]. Populate the [x, y, yaw] sub-block.
+            cov = np.zeros(36, dtype=np.float64)
+            cov[0] = pose_covariance[0, 0]  # x-x
+            cov[1] = pose_covariance[0, 1]  # x-y
+            cov[5] = pose_covariance[0, 2]  # x-yaw
+            cov[6] = pose_covariance[1, 0]  # y-x
+            cov[7] = pose_covariance[1, 1]  # y-y
+            cov[11] = pose_covariance[1, 2]  # y-yaw
+            cov[30] = pose_covariance[2, 0]  # yaw-x
+            cov[31] = pose_covariance[2, 1]  # yaw-y
+            cov[35] = pose_covariance[2, 2]  # yaw-yaw
+            msg.pose.covariance = cov
+
+        self.odom_publisher.publish(msg)
+
+
+    def _publishLandmarkMap(self):
+        marker_array_msg = MarkerArray()
+
+        landmarks = self._orchestrator._ekf.tracked_landmarks
+
+        for i, l in enumerate(landmarks):
+            marker = Marker()
+            marker.header.frame_id = "odom"
+            marker.id = i
+            marker.type = Marker.CYLINDER
+            marker.action = Marker.ADD
+            marker.pose.position.x = l.abs_x
+            marker.pose.position.y = l.abs_y
+            marker.pose.position.z = 0.0
+            marker.pose.orientation.w = 1.0
+            marker.color.r = 1.0
+            marker.color.a = 1.0
+            marker.scale.x = 0.1
+            marker.scale.y = 0.1
+            marker.scale.z = 0.1
+            marker.frame_locked = False
+            marker_array_msg.markers.append(marker)
+
+        self.map_publisher.publish(marker_array_msg)        
 
     # ------------------------------------------------------------------
     # Helpers
@@ -169,6 +237,13 @@ class EkfInterface(object):
                                            [0.0, 0.0, (s_angular_vel)**2]])
 
         return motion_command, motion_covariance
+    
+
+    @staticmethod
+    def _quaternion_from_yaw(yaw) -> tuple:
+        """Convert a yaw angle (numpy array of shape (1,)) to a (x, y, z, w) quaternion."""
+        half_yaw = yaw[0] * 0.5
+        return (0.0, 0.0, math.sin(half_yaw), math.cos(half_yaw))
 
 
 
