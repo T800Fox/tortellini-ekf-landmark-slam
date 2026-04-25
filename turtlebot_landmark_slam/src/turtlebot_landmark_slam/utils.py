@@ -238,3 +238,9 @@ def homogenous_transform(R: np.array, t: np.array):
     H[:3, 3] = t[:3]
 
     return H
+
+def euclidianDistance(x1: float, y1: float, x2: float, y2: float) -> float:
+    dx = float(x2 - x1)
+    dy = float(y2 - y1)    
+
+    return np.sqrt(dx**2 + dy**2)

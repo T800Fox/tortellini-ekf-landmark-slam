@@ -32,7 +32,8 @@ class EkfInterface(object):
             f"[DataProvider] std_dev_angular_vel: {self.std_dev_angular_vel}"
         )
 
-        self.is_real = bool(self._node.declare_parameter("is_real", False).value)
+        
+        self.is_real = self._node.get_parameter('is_real')
 
         if self.is_real:
             self._node.get_logger().info(

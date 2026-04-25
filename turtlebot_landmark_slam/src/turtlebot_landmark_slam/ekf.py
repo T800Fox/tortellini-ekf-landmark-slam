@@ -69,8 +69,8 @@ class ExtendedKalmanFilter(object):
         return np.array(self._state_covariance, copy=True)
     
     @property
-    def active_landmarks(self):
-        return self._active_landmarks
+    def tracked_landmarks(self) -> list[StoredLandmark]:
+        return self._tracked_landmarks
 
     # ------------------------------------------------------------------
     # Helper Functions
@@ -91,16 +91,16 @@ class ExtendedKalmanFilter(object):
         state_index = self.get_landmark_by_label(label).index
         return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
 
-    def _update_stored_landmarks(self, state_mean):
-        for l in self._tracked_landmarks:
-            state_x = float(state_mean[l.index][0])
-            state_y = float(state_mean[l.index+1][0])
+    # def _update_stored_landmarks(self, state_mean):
+    #     for l in self._tracked_landmarks:
+    #         state_x = float(state_mean[l.index][0])
+    #         state_y = float(state_mean[l.index+1][0])
 
-            l.abs_x = state_x
-            l.abs_y = state_y
+    #         l.abs_x = state_x
+    #         l.abs_y = state_y
 
     def _active_landmarks(self):
-        self._update_stored_landmarks(self.state_mean)
+        # self._update_stored_landmarks(self.state_mean)
 
         print("### Currently Tracking ###")
         for l in self._tracked_landmarks:
@@ -173,8 +173,8 @@ class ExtendedKalmanFilter(object):
                 abs_x=float(landmark_abs_pos[0]),
                 abs_y=float(landmark_abs_pos[1]),
                 index=insertion_index,
-                label=landmark_measurement.label
-
+                label=landmark_measurement.label,
+                covariance=landmark_measurement.covariance
             )
             self._tracked_landmarks.append(deepcopy(new_landmark))
 
@@ -195,7 +195,8 @@ class ExtendedKalmanFilter(object):
             P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
             state_covariance = np.array(P, copy=True)
 
-        index = self.get_landmark_by_label(landmark_measurement.label).index
+        identified_landmark = self.get_landmark_by_label(landmark_measurement.label)
+        index = identified_landmark.index
         estimated_landmark = self.extract_landmark_from_state(landmark_measurement.label, prior_state)
         expected_measurement, Hr, Hl = utils.Absolute2RelativeXY(pose, estimated_landmark)
 
@@ -221,9 +222,16 @@ class ExtendedKalmanFilter(object):
 
         # Update state
         # np.copyto(self._state_vector, posterior_state_mean)
+        
         self._state_vector = np.array(posterior_state_mean, copy=True)
         self._state_covariance = np.array(posterior_state_covariance, copy=True)
         # self._update_stored_landmarks(self.state_mean)
+
+        state_x = float(self.state_mean[index][0])
+        state_y = float(self.state_mean[index+1][0])
+
+        identified_landmark.abs_x = state_x
+        identified_landmark.abs_y = state_y
 
         self._active_landmarks()
 

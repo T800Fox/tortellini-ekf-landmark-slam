@@ -8,20 +8,21 @@ class LandmarkMeasurement:
     y: float
     label: str
     covariance: np.array # [2x2]
+    is_new: bool
 
     def __str__(self):
         return f"x: {self.x} y: {self.y} label: {self.label} cov: {self.covariance}"
 
-    @classmethod
-    def from_landmark_msg(cls, msg: LandmarkMsg):
-        covariance = np.array([[msg.s_x, 0.0],
-                                    [0.0, msg.s_y]])
-        # Deal with measurement covariance close to zero
-        if msg.s_x < 10**(-4) and msg.s_y < 10**(-4):
-            print("Measurement covariance is close to zero.")
-            covariance = np.array([[0.01,0.0], [0.0, 0.01]])   # 10 cm ??  
-        measurement = cls(msg.x, msg.y, msg.label, covariance)
-        return measurement
+    # @classmethod
+    # def from_landmark_msg(cls, msg: LandmarkMsg):
+    #     covariance = np.array([[msg.s_x, 0.0],
+    #                                 [0.0, msg.s_y]])
+    #     # Deal with measurement covariance close to zero
+    #     if msg.s_x < 10**(-4) and msg.s_y < 10**(-4):
+    #         print("Measurement covariance is close to zero.")
+    #         covariance = np.array([[0.01,0.0], [0.0, 0.01]])   # 10 cm ??  
+    #     measurement = cls(msg.x, msg.y, msg.label, covariance)
+    #     return measurement
 
 @dataclass
 class ControlMeasurement:
@@ -43,6 +44,11 @@ class StoredLandmark:
     abs_y: float    # y component of abs. landmark coords.
     index: int      # index in state variable
     label: str      # name of landmark
+    covariance: np.array # [2x2]
 
     colour='r'      # plot colour
     radius=0.1      # plot patch radius
+
+    @property
+    def mean(self):
+        return (self.abs_x, self.abs_y)
