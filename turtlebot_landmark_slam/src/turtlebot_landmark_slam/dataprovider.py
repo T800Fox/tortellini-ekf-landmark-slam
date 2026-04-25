@@ -51,11 +51,13 @@ class DataProviderBase(ABC):
 
         # Subscribe to control message. This should be a Twist
         self._control_subscription = self._node.create_subscription(
-            Twist, "~/control", self.controlCallback, 1
+            Twist, "/odom_to_control_republisher/control", self.controlCallback, 1
         )
 
     def controlCallback(self, twist: Twist):
         now = self._node.get_clock().now()
+
+        print('control callback fired')
 
         if self._last_control_msg_time is None:
             self._last_control_msg_time = now

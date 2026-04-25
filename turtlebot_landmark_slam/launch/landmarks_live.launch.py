@@ -6,15 +6,6 @@ def generate_launch_description():
         [
             Node(
                 package="turtlebot_landmark_slam",
-                executable="odom_to_control_republisher.py",
-                name="odom_to_control_republisher",
-                output="screen",
-                remappings=[
-                    ("~/odom", "/odom"),
-                ]
-            ),
-            Node(
-                package="turtlebot_landmark_slam",
                 executable="landmark_publisher_live.py",
                 name="landmark_publisher_live",
                 output="screen",

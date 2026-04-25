@@ -57,6 +57,7 @@ class Pipeline(object):
 
     def controlHandler(self, control_measurement: ControlMeasurement):
         """Run the EKF predict step on each incoming control measurement."""
+        print("pipeline control handler fired.")
         with self._lock:
             self._last_odom_time = self._node.get_clock().now().to_msg()
             self._ekf.predict(control_measurement)
