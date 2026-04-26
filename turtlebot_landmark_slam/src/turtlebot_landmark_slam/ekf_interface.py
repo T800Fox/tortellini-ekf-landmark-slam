@@ -15,6 +15,7 @@ from geometry_msgs.msg import TwistStamped
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
 from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
 from turtlebot_landmark_slam.types import ControlMeasurement
+from turtlebot_landmark_slam.utils import yaw_from_quaternion
 
 class EkfInterface(object):
     def __init__(self, node: Node, orchestrator: EkfOrchestrator) -> None:
@@ -23,7 +24,7 @@ class EkfInterface(object):
         self._lock = Lock()
 
         self._last_motion_msg_time = None
-        self._last_small_motion_time = None
+        self._last_small_motion_log_time = None
 
         self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.01).value)
         self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (30 * np.pi) / 180).value)
@@ -79,7 +80,7 @@ class EkfInterface(object):
         ## Publishers ## 
         self.odom_publisher = self._node.create_publisher(Odometry, "~/odom", 1)
         self.map_publisher = self._node.create_publisher(MarkerArray, "~/map", 5)
-        self.publisher_timer = self._node.create_timer(0.3, self.publishTimerCallback)
+        # self.publisher_timer = self._node.create_timer(0.3, self.publishTimerCallback)
 
 
     def _motion_callback(self, msg):
@@ -89,6 +90,14 @@ class EkfInterface(object):
             self._last_motion_msg_time = now
             return
         
+
+        ### FOR SIMULATED LANDMARKS ONLY ###
+        x = msg.pose.pose.position.x
+        y = msg.pose.pose.position.y
+        theta = yaw_from_quaternion(msg.pose.pose.orientation)
+        self._orchestrator.lidar_observer.update_pose([x,y,theta])
+
+
         dt = (now - self._last_motion_msg_time).nanoseconds / 1e9
         self._last_motion_msg_time = now
 
@@ -98,8 +107,8 @@ class EkfInterface(object):
         # ignore small motions and don't spam log with status messages
         if abs(linear_vel) < 0.009 and abs(angular_vel) < 0.09:
             should_log = (
-                self._last_small_motion_time is None 
-                or (now - self._last_small_motion_time).nanoseconds / 1e9 >= 10.0
+                self._last_small_motion_log_time is None 
+                or (now - self._last_small_motion_log_time).nanoseconds / 1e9 >= 10.0
             )
         
             if should_log:
@@ -122,6 +131,7 @@ class EkfInterface(object):
         dtheta = motion_command[2][0]
 
         motion_measurement = ControlMeasurement(dx, dy, dtheta, motion_covariance)
+
         self._orchestrator.motion_handler(motion_measurement)
 
         # self.publishOdometry(
@@ -131,6 +141,10 @@ class EkfInterface(object):
         
     def _lidar_callback(self, msg):
         print("lidar callback fired")
+        
+        if self._last_motion_msg_time is None:
+            print("No previous motion, skipping...")
+            return
     
         if self.is_real:
             points = np.array([[p.x, p.y] for p in msg.points], dtype=float)
@@ -138,6 +152,12 @@ class EkfInterface(object):
             points = self._laserscan_to_rel_point(msg)
 
         self._orchestrator.lidar_handler(points)
+
+        self.publishOdometry(
+            self._orchestrator._ekf.pose,
+            self._orchestrator._ekf.pose_covariance)
+
+        self._publishLandmarkMap()
 
         
         
@@ -193,18 +213,18 @@ class EkfInterface(object):
 
 
     def _publishLandmarkMap(self):
+        landmark_poses = self._orchestrator._ekf.state_mean[3:].flatten()
+        seen_landmarks = list(self._orchestrator.seen_landmark_ids)
         marker_array_msg = MarkerArray()
 
-        landmarks = self._orchestrator._ekf.tracked_landmarks
-
-        for i, l in enumerate(landmarks):
+        for i in range(len(landmark_poses) // 2):
             marker = Marker()
             marker.header.frame_id = "odom"
-            marker.id = i
+            marker.id = seen_landmarks[i]
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
-            marker.pose.position.x = l.abs_x
-            marker.pose.position.y = l.abs_y
+            marker.pose.position.x = float(landmark_poses[2 * i])
+            marker.pose.position.y = float(landmark_poses[2 * i + 1])
             marker.pose.position.z = 0.0
             marker.pose.orientation.w = 1.0
             marker.color.r = 1.0
@@ -215,7 +235,7 @@ class EkfInterface(object):
             marker.frame_locked = False
             marker_array_msg.markers.append(marker)
 
-        self.map_publisher.publish(marker_array_msg)        
+        self.map_publisher.publish(marker_array_msg)      
 
     # ------------------------------------------------------------------
     # Helpers

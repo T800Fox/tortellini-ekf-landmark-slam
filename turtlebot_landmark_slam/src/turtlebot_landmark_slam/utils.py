@@ -245,3 +245,9 @@ def euclidianDistance(x1: float, y1: float, x2: float, y2: float) -> float:
     dy = float(y2 - y1)    
 
     return np.sqrt(dx**2 + dy**2)
+
+def yaw_from_quaternion(q) -> float:
+    """Extract yaw (rotation about Z) from a geometry_msgs Quaternion."""
+    siny_cosp = 2.0 * (q.w * q.z + q.x * q.y)
+    cosy_cosp = 1.0 - 2.0 * (q.y * q.y + q.z * q.z)
+    return float(np.arctan2(siny_cosp, cosy_cosp))

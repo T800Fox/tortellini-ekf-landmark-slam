@@ -6,12 +6,12 @@ from landmarks_msg.msg import LandmarkMsg
 class LandmarkMeasurement:
     x: float
     y: float
-    label: int
     covariance: np.array # [2x2]
-    is_new: bool
+
+    id: int
 
     def __str__(self):
-        return f"x: {self.x} y: {self.y} label: {self.label} cov: {self.covariance}"
+        return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
 
     # @classmethod
     # def from_landmark_msg(cls, msg: LandmarkMsg):
@@ -37,14 +37,19 @@ class ControlMeasurement:
 
     def __str__(self):
         return f"sx: {self.dx} dy: {self.dy} dtheta: {self.dtheta} cov: {self.covariance}"
+
     
+
 @dataclass
 class StoredLandmark:
     abs_x: float    # x component of abs. landmark coords.
     abs_y: float    # y component of abs. landmark coords.
+    covariance: np.array # [2x2]
+
     index: int      # index in state variable
     id: int      # name of landmark
-    covariance: np.array # [2x2]
+    label="NULL"
+    
 
     colour='r'      # plot colour
     radius=0.1      # plot patch radius

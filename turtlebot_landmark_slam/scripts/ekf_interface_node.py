@@ -9,7 +9,7 @@ from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
 
 class EkfInterfaceNode(Node):
     def __init__(self) -> None:
-        super().__init__("ekf_interface")
+        super().__init__("ekf")
 
         self.real = bool(self.declare_parameter("is_real", False).value)
 
