@@ -68,6 +68,8 @@ class Pipeline(object):
             is_new = landmark_measurement.label not in self._seen_landmarks
             if is_new:
                 self._seen_landmarks.add(landmark_measurement.label)
+
+            print("Feeding Measurement ->", landmark_measurement)
             self._ekf.update(landmark_measurement, is_new)
 
     # ------------------------------------------------------------------
