@@ -184,7 +184,7 @@ class ExtendedKalmanFilter(object):
                 abs_x=float(landmark_abs_pos[0]),
                 abs_y=float(landmark_abs_pos[1]),
                 index=insertion_index,
-                label=landmark_measurement.label,
+                id=landmark_measurement.label,
                 covariance=landmark_measurement.covariance
             )
             self._tracked_landmarks.append(deepcopy(new_landmark))

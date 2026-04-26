@@ -6,7 +6,7 @@ from landmarks_msg.msg import LandmarkMsg
 class LandmarkMeasurement:
     x: float
     y: float
-    label: str
+    label: int
     covariance: np.array # [2x2]
     is_new: bool
 
@@ -43,7 +43,7 @@ class StoredLandmark:
     abs_x: float    # x component of abs. landmark coords.
     abs_y: float    # y component of abs. landmark coords.
     index: int      # index in state variable
-    label: str      # name of landmark
+    id: int      # name of landmark
     covariance: np.array # [2x2]
 
     colour='r'      # plot colour
@@ -54,4 +54,4 @@ class StoredLandmark:
         return (self.abs_x, self.abs_y)
     
     def __str__(self):
-        return f"label: {self.label}, index: {self.index}, coords: ({self.abs_x},{self.abs_y})"
+        return f"label: {self.id}, index: {self.index}, coords: ({self.abs_x},{self.abs_y})"

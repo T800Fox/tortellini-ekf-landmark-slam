@@ -79,6 +79,7 @@ class EkfInterface(object):
         ## Publishers ## 
         self.odom_publisher = self._node.create_publisher(Odometry, "~/odom", 1)
         self.map_publisher = self._node.create_publisher(MarkerArray, "~/map", 5)
+        self.publisher_timer = self._node.create_timer(0.3, self.publishTimerCallback)
 
 
     def _motion_callback(self, msg):
@@ -123,9 +124,9 @@ class EkfInterface(object):
         motion_measurement = ControlMeasurement(dx, dy, dtheta, motion_covariance)
         self._orchestrator.motion_handler(motion_measurement)
 
-        self.publishOdometry(
-            self._orchestrator._ekf.pose,
-            self._orchestrator._ekf.pose_covariance)
+        # self.publishOdometry(
+        #     self._orchestrator._ekf.pose,
+        #     self._orchestrator._ekf.pose_covariance)
 
         
     def _lidar_callback(self, msg):
@@ -138,12 +139,21 @@ class EkfInterface(object):
 
         self._orchestrator.lidar_handler(points)
 
+        
+        
+
+    def publishTimerCallback(self):
+        """Publish the current EKF state as an Odometry message and a landmark MarkerArray."""
+        print("publish state called...")
+        if self._last_motion_msg_time is None:
+            print("blocked due to no last odom.")
+            return
+
         self.publishOdometry(
             self._orchestrator._ekf.pose,
             self._orchestrator._ekf.pose_covariance)
 
         self._publishLandmarkMap()
-        
 
     # def _image_callback(self, msg):
     #     pass
