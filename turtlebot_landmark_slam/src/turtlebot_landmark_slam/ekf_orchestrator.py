@@ -23,7 +23,8 @@ class EkfOrchestrator(object):
         else:
             self.lidar_observer = CylinderObserver(
                 show_display=True,
-                max_landmark_dist=self.ignore_over_dist,
+                max_landmark_dist=5,
+                max_landmark_count=4,
                 distance_threshold=0.05,        # 0.05
                 min_points=4,
                 max_radius=0.16,                # 0.2          -- higest reading was 0.18
@@ -58,7 +59,6 @@ class EkfOrchestrator(object):
                 nextLabel += 1
                 labeled.append(lm)
 
-            
             for llm in labeled:
                 self._ekf.update(llm, llm.is_new)
 

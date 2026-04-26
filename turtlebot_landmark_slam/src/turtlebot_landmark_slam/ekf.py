@@ -206,7 +206,8 @@ class ExtendedKalmanFilter(object):
 
         C_cols = state_covariance.shape[0]
         C = np.zeros((2, C_cols))
-        C[:, index:index+2] = Hl
+        C[:, 0:3] = Hr              # dependance on robot pose EXPERIMENTAL
+        C[:, index:index+2] = Hl    # dependance on landmark postion
 
         y = Z - expected_measurement        # INNOVATION
         S = C @ state_covariance @ C.T + R

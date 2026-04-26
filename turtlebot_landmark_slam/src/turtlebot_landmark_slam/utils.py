@@ -108,8 +108,6 @@ def Absolute2RelativeXY(robot_pose_abs, landmark_position_abs):
     pose and the landmark
     :rtype: tuple
     """
-    print("Abs2Rel -> pos_abs\n",landmark_position_abs )
-    print("Has shape ", landmark_position_abs.shape)
 
     assert robot_pose_abs.shape == (3, 1)
     assert landmark_position_abs.shape == (2, )
@@ -167,9 +165,6 @@ def Relative2AbsoluteXY(robot_pose_abs, landmark_position_rel):
     :param landmark_position_rel: position of the landmark in the robot's frame of reference [x, y]
     :return : [position of the landmark in the absolute frame of reference [x, y], G1, G2]
     """
-
-    print("pose ->\n", robot_pose_abs)
-    print("landmark rel ->\n", landmark_position_rel)
 
     assert robot_pose_abs.shape == (3, 1)
 

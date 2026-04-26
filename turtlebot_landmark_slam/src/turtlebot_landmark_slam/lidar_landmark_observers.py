@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle as pltCircle
+from sys import exit
 
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
 from turtlebot_landmark_slam.utils import Relative2AbsoluteXY, Absolute2RelativeXY, euclidianDistance
@@ -10,6 +11,7 @@ class CylinderObserver(object):
     def __init__(self,
                 show_display,
                 max_landmark_dist,
+                max_landmark_count=None,
                 distance_threshold=0.05,        # 0.05
                 min_points=4,
                 max_radius=0.09,                # 0.2          -- higest reading was 0.18
@@ -33,6 +35,8 @@ class CylinderObserver(object):
         self.circle_polar = polar
 
         self.inital_landmark_label = 'NULL'
+
+        self.max_landmark_count = max_landmark_count
 
 
 
@@ -146,6 +150,10 @@ class CylinderObserver(object):
         # For some points (relative frame) pull out circles and try 
         # associate them to landmarks. 
         # Landmark Id's are based on order of discovery, NOT camera data
+        if self.max_landmark_count is not None:
+            if len(current_landmarks) > self.max_landmark_count:
+                print('Landmark runaway!')
+                exit()
 
 
         close_points = [[point[0], point[1]] for point in rel_points 
@@ -168,29 +176,32 @@ class CylinderObserver(object):
 
 
         # convert detections from relative into global frame
+        # also prune theta term from covariance
         for i_d in range(len(detections)):
             relative_dist = detections[i_d].center
             # print('pose shape -> ', pose.shape)
 
             abs_dist, _, _ = Relative2AbsoluteXY(pose, relative_dist)
             detections[i_d].center = abs_dist
+            detections[i_d].covariance = detections[i_d].covariance[0:2, 0:2]
             # print('Rel detection -> \n', relative_dist)
             # print('Abs detection -> \n', detections[i_d].center)
 
         # try associate detections w/ with tag...
         landmark_measurements = []
         for d in detections:
+            print(f"Detection @ ({d.center[0]},{d.center[1]})")
+
+
             # just assume the first ever detection isn't a false positive
             if len(current_landmarks) == 0:
-                print('center is ', type(d.center))
-
                 reform_center = np.array([c[0] for c in d.center])
                 rel_coords, _, _ = Absolute2RelativeXY(pose, reform_center)
 
                 measurement_of_initial_landmark = LandmarkMeasurement(
                     x=float(rel_coords[0]),
                     y=float(rel_coords[1]),
-                    covariance=d.covariance[0:2, 0:2], # ignore theta
+                    covariance=d.covariance, 
                     label=self.inital_landmark_label,
                     is_new=True
                 )
@@ -211,7 +222,7 @@ class CylinderObserver(object):
                     closest_landmark = l
                     closest_dist = mahal_dist
                     
-            print(f"\tClosest Landmark is {closest_landmark.id} --> ({closest_landmark.mean[0]}, {closest_landmark.mean[1]})"
+            print(f"\tClosest Landmark is {closest_landmark.label} --> ({closest_landmark.mean[0]}, {closest_landmark.mean[1]})"
                   f" w/ dist ({closest_dist})")
 
 
@@ -225,7 +236,7 @@ class CylinderObserver(object):
                 measurement_of_existing_landmark = LandmarkMeasurement(
                     x=float(rel_coords[0]),
                     y=float(rel_coords[1]),
-                    covariance=d.covariance[0:2, 0:2], # ignore theta
+                    covariance=d.covariance, # ignore theta
                     label=closest_landmark.label,
                     is_new=False
                 )
@@ -233,7 +244,7 @@ class CylinderObserver(object):
                 landmark_measurements.append(measurement_of_existing_landmark)
 
 
-            elif 40000 < closest_dist and closest_dist < 60000:
+            elif 10000 < closest_dist and closest_dist < 60000:
                 # new landmark window --> not ludicriously big, 
                 #                         definitely not misreading of existing landmark
 
@@ -244,7 +255,7 @@ class CylinderObserver(object):
                 measurement_of_new_landmark = LandmarkMeasurement(
                     x=float(rel_coords[0]),
                     y=float(rel_coords[1]),
-                    covariance=d.covariance[0:2, 0:2], # ignore theta
+                    covariance=d.covariance, # ignore theta
                     label=self.inital_landmark_label,
                     is_new=True
                 )
@@ -273,14 +284,14 @@ def _mahalanobisDistance(detection_mean, detection_covariance, stored_mean, stor
     dx = float(detection_mean[0] - stored_mean[0])
     dy = float(detection_mean[1] - stored_mean[1])   
 
-    J_det = np.array([dx / safe_mahalanobis_mean, dy / safe_mahalanobis_mean, 0])
+    J_det = np.array([dx / safe_mahalanobis_mean, dy / safe_mahalanobis_mean])
     J_stored = -J_det # Derivative w.r.t stored point is just the negative
 
     cov_block = np.block([
-        [detection_covariance, np.zeros((3, 3))],
-        [np.zeros((3, 3)),     stored_covariance]
+        [detection_covariance, np.zeros((2, 2))],
+        [np.zeros((2, 2)),     stored_covariance]
     ])
-    J_combined = np.hstack([J_det, J_stored]).reshape(1, 6)
+    J_combined = np.hstack([J_det, J_stored]).reshape(1, 4)
 
     covariance_backup = 0.3
     mahalanobis_covariance = (J_combined @ cov_block @ J_combined.T).item()

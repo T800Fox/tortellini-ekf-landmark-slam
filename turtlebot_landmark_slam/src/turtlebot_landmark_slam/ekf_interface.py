@@ -26,7 +26,7 @@ class EkfInterface(object):
         self._last_small_motion_time = None
 
         self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.01).value)
-        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (5 * np.pi) / 180).value)
+        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (30 * np.pi) / 180).value)
 
         self._node.get_logger().info(
             f"[DataProvider] std_dev_linear_vel: {self.std_dev_linear_vel}"
@@ -36,7 +36,7 @@ class EkfInterface(object):
         )
 
         
-        self.is_real = self._node.get_parameter('is_real')
+        self.is_real = bool(self._node.get_parameter("is_real").value)
 
         if self.is_real:
             self._node.get_logger().info(
@@ -68,8 +68,8 @@ class EkfInterface(object):
         )
 
         self._motion_subscription = self._node.create_subscription(
-            TwistStamped,
-            'cmd_vel',
+            Odometry,
+            'odom',
             self._motion_callback,
             qos_profile=10
         )
@@ -91,8 +91,8 @@ class EkfInterface(object):
         dt = (now - self._last_motion_msg_time).nanoseconds / 1e9
         self._last_motion_msg_time = now
 
-        linear_vel = msg.twist.linear.x
-        angular_vel = msg.twist.angular.z
+        linear_vel = msg.twist.twist.linear.x
+        angular_vel = msg.twist.twist.angular.z
         
         # ignore small motions and don't spam log with status messages
         if abs(linear_vel) < 0.009 and abs(angular_vel) < 0.09:
@@ -129,12 +129,18 @@ class EkfInterface(object):
 
         
     def _lidar_callback(self, msg):
+        print("lidar callback fired")
+    
         if self.is_real:
             points = np.array([[p.x, p.y] for p in msg.points], dtype=float)
         else:
             points = self._laserscan_to_rel_point(msg)
 
         self._orchestrator.lidar_handler(points)
+
+        self.publishOdometry(
+            self._orchestrator._ekf.pose,
+            self._orchestrator._ekf.pose_covariance)
 
         self._publishLandmarkMap()
         
