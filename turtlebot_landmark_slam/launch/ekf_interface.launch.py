@@ -15,7 +15,7 @@ def generate_launch_description():
             Node(
                 package="turtlebot_landmark_slam",
                 executable="ekf_interface_node.py",
-                name="ekf_interface",
+                name="ekf",
                 output="screen",
                 parameters=[{"is_real": ParameterValue(is_real, value_type=bool)}],
             )

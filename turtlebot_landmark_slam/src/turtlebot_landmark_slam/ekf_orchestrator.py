@@ -60,6 +60,7 @@ class EkfOrchestrator(object):
                 labeled.append(lm)
 
             for llm in labeled:
+                print("Feeding Measurement -> ", llm)
                 self._ekf.update(llm, llm.is_new)
 
 

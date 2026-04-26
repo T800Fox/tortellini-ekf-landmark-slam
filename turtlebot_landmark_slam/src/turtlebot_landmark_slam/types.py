@@ -52,3 +52,6 @@ class StoredLandmark:
     @property
     def mean(self):
         return (self.abs_x, self.abs_y)
+    
+    def __str__(self):
+        return f"label: {self.label}, index: {self.index}, coords: ({self.abs_x},{self.abs_y})"
