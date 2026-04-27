@@ -6,7 +6,7 @@ from geometry_msgs.msg import Twist
 
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
-from turtlebot_landmark_slam.landmarks import SimLandmarkObserver
+from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, lidarLandmarkObserver
 
 class EkfOrchestrator(object):
     def __init__(self, is_real):
@@ -15,8 +15,9 @@ class EkfOrchestrator(object):
         self._lock = Lock()
 
         self.ignore_over_dist = 1.5
+        self.landmark_cap = 4
 
-        self.lidar_observer = SimLandmarkObserver()
+        # self.lidar_observer = SimLandmarkObserver()
 
         self.seen_landmark_ids = []
 
@@ -28,18 +29,18 @@ class EkfOrchestrator(object):
             #     max_landmark_dist=self.ignore_over_dist
             #     )
         else:
-            self.lidar_observer = SimLandmarkObserver()
-            # self.lidar_observer = lidarCylinderObserver(
-            #     show_display=True,
-            #     max_landmark_dist=5,
-            #     max_landmark_count=4,
-            #     distance_threshold=0.05,        # 0.05
-            #     min_points=4,
-            #     max_radius=0.16,                # 0.2          -- higest reading was 0.18
-            #     min_radius=0.14,                # 0.1          -- lowest reading was 0.11
-            #     max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
-            #     min_arc_angle=np.radians(90)   # np.radians(90)-- cleared out wall false positives
-            #     )
+            # self.lidar_observer = SimLandmarkObserver()
+            self.lidar_observer = lidarLandmarkObserver(
+                show_display=True,
+                max_landmark_dist=5,
+                max_landmark_count=4,
+                distance_threshold=0.05,        # 0.05
+                min_points=4,
+                max_radius=0.16,                # 0.2          -- higest reading was 0.18
+                min_radius=0.14,                # 0.1          -- lowest reading was 0.11
+                max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
+                min_arc_angle=np.radians(90)   # np.radians(90)-- cleared out wall false positives
+                )
 
     def motion_handler(self, control_input: ControlMeasurement):
         with self._lock:
@@ -49,9 +50,17 @@ class EkfOrchestrator(object):
         with self._lock:
             
             pose = self._ekf.pose
+            pose_covariance = self._ekf.pose_covariance
+            stored_landmarks = self._ekf.tracked_landmarks
+
+            if len(stored_landmarks) > self.landmark_cap:
+                raise RuntimeError(f"+{self.landmark_cap} Landmarks, Aborting.")
 
             print("Collecting Landmark Measurements")
-            measurements = self.lidar_observer.measure_landmarks()
+            measurements = self.lidar_observer.measure_landmarks(pose,
+                                                                 pose_covariance, 
+                                                                 rel_points, 
+                                                                 stored_landmarks)
             if len(measurements) == 0:
                 print('empty measurements')
                 return

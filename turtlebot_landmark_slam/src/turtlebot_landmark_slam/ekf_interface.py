@@ -91,11 +91,11 @@ class EkfInterface(object):
             return
         
 
-        ### FOR SIMULATED LANDMARKS ONLY ###
-        x = msg.pose.pose.position.x
-        y = msg.pose.pose.position.y
-        theta = yaw_from_quaternion(msg.pose.pose.orientation)
-        self._orchestrator.lidar_observer.update_pose([x,y,theta])
+        # ### FOR SIMULATED LANDMARKS ONLY ###
+        # x = msg.pose.pose.position.x
+        # y = msg.pose.pose.position.y
+        # theta = yaw_from_quaternion(msg.pose.pose.orientation)
+        # self._orchestrator.lidar_observer.update_pose([x,y,theta])
 
 
         dt = (now - self._last_motion_msg_time).nanoseconds / 1e9

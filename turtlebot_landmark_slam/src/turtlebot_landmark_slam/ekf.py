@@ -1,5 +1,5 @@
 import numpy as np
-from turtlebot_landmark_slam.types import LandmarkMeasurement, ControlMeasurement
+from turtlebot_landmark_slam.types import LandmarkMeasurement, ControlMeasurement, StoredLandmark
 import turtlebot_landmark_slam.utils as utils
 from copy import deepcopy
 
@@ -28,7 +28,9 @@ class ExtendedKalmanFilter(object):
         )
 
         # Maps landmark label -> starting row index in the state vector
-        self._landmark_index = {}
+        # self._landmark_index = {}
+
+        self._tracked_landmarks = []
 
     # ------------------------------------------------------------------
     # State accessors
@@ -65,43 +67,13 @@ class ExtendedKalmanFilter(object):
     def state_covariance(self):
         """Full N x N state covariance matrix."""
         return np.array(self._state_covariance, copy=True)
+    
+    @property
+    def tracked_landmarks(self):
+        return deepcopy(self._tracked_landmarks)
 
     # ------------------------------------------------------------------
-    # Helper Functions
-    # ------------------------------------------------------------------
-
-    def extract_landmark_from_state(self, id, state_mean):
-        if id not in self._landmark_index:
-            return np.array([-99, -99])
-
-        state_index = self._landmark_index[id]
-        return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
-
-    def _active_landmarks(self):
-        print("### EKF Currently Tracking ###")
-        for lk in self._landmark_index.keys():
-            l_data = self.extract_landmark_from_state(lk, self.state_mean)
-            print(f"\t{lk} : ({float(l_data[0])},{float(l_data[1])})")
-
-
-    @staticmethod
-    def reguarlise_matrix(S, l=0.1):
-        assert S.shape[0] == S.shape[1], "Matrix S must be square."
-
-        # Create an identity matrix of the same size as S
-        I = np.eye(S.shape[0])
-
-        # Apply L2 regularization (add lambda * I)
-        S_reg = S + l * I
-
-        # Check if S_reg is invertible by computing its determinant
-        if np.linalg.det(S_reg) == 0:
-            raise ValueError("The regularized matrix is still singular.")
-
-        return S_reg
-
-    # ------------------------------------------------------------------
-    # EKF predict step
+    # Public Functions
     # ------------------------------------------------------------------
 
     def predict(self, control: ControlMeasurement):
@@ -131,19 +103,13 @@ class ExtendedKalmanFilter(object):
         self._state_covariance = F_full @ self._state_covariance @ F_full.T
         self._state_covariance[0:3, 0:3] += W @ motion_covariance @ W.T
         
-
-
-    # ------------------------------------------------------------------
-    # EKF update step
-    # ------------------------------------------------------------------
-
     def update(self, landmark_measurement: LandmarkMeasurement, is_new: bool):
         """Correct the state estimate using a landmark measurement.
 
         If `is_new` is True the landmark is appended to the state vector and
         the covariance matrix is augmented before the standard EKF update.
         """
-        print(f"Update Called --> tracking: {len(self._landmark_index) }") 
+        print(f"Update Called --> tracking: {len(self._tracked_landmarks) }") 
 
         pose = self.pose
         state_covariance = self.state_covariance
@@ -155,8 +121,10 @@ class ExtendedKalmanFilter(object):
             landmark_abs_pos, H1, H2 = utils.Relative2AbsoluteXY(pose, [landmark_measurement.x, landmark_measurement.y])
 
             insertion_index = prior_state.shape[0]
-            self._landmark_index[landmark_measurement.id] = insertion_index
+            # self._landmark_index[landmark_measurement.id] = insertion_index
             print(f"Landmark {landmark_measurement.id} inserted at {insertion_index}")
+
+            
 
             prior_state = np.vstack((prior_state, landmark_abs_pos))
             
@@ -175,9 +143,24 @@ class ExtendedKalmanFilter(object):
             P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
             state_covariance = np.array(P, copy=True)
 
-        index = self._landmark_index[landmark_measurement.id]
-        estimated_landmark = self.extract_landmark_from_state(landmark_measurement.id, prior_state)
-        expected_measurement, Hr, Hl = utils.Absolute2RelativeXY(pose, estimated_landmark)
+            landmark_covariance = np.array(state_covariance[insertion_index:insertion_index+2,
+                                                    insertion_index:insertion_index+2], copy=True)
+
+            new_stored = StoredLandmark(
+                abs_x=landmark_abs_pos[0],
+                abs_y=landmark_abs_pos[1],
+                covariance=landmark_covariance,
+                index=insertion_index,
+                id=landmark_measurement.id
+            )
+            self._tracked_landmarks.append(new_stored)
+
+
+        # index = self._landmark_index[landmark_measurement.id]
+        identified_landmark = self._extract_landmark_from_stored(landmark_measurement.id)
+        index = identified_landmark.index
+        estimated_landmark_data = self._extract_landmark_from_state(landmark_measurement.id, prior_state)
+        expected_measurement, Hr, Hl = utils.Absolute2RelativeXY(pose, estimated_landmark_data)
 
         Z = np.array([[landmark_measurement.x], [landmark_measurement.y]])
         R = landmark_measurement.covariance
@@ -193,7 +176,7 @@ class ExtendedKalmanFilter(object):
         if np.linalg.det(S) < 1e-6:
             print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}')
             # hack by adding reguarlisaer
-            S = ExtendedKalmanFilter.reguarlise_matrix(S)
+            S = ExtendedKalmanFilter._reguarlise_matrix(S)
 
         # K = state_covariance @ C.T @ np.linalg.inv(S)
         # posterior_state_mean = prior_state + K @ y
@@ -211,9 +194,69 @@ class ExtendedKalmanFilter(object):
         # np.copyto(self._state_vector, posterior_state_mean)
         self._state_vector = np.array(posterior_state_mean, copy=True)
         self._state_covariance = np.array(posterior_state_covariance, copy=True)
+
+        # Update tracked landmark data
+        updated_landmark_coords = self._extract_landmark_from_state(landmark_measurement.id, self.state_mean)
+        updated_landmark_covariance = self._get_landmark_covariance(landmark_measurement.id, self.state_covariance)
+        identified_landmark.abs_x = updated_landmark_coords[0]
+        identified_landmark.abs_y = updated_landmark_coords[1]
+        identified_landmark.covariance = updated_landmark_covariance
         
 
         self._active_landmarks()
 
-    ### 
+    def update_landmark_label(self, landmark_id, new_label):
+        try:
+            landmark_to_update = self._extract_landmark_from_stored(landmark_id)
+        except RuntimeError:
+            print(f"[ERROR] Issue pulling Landmark with id {landmark_id}")
+            return
+
+        landmark_to_update.label = new_label
+        return
+
+    # ------------------------------------------------------------------
+    # Helper Functions
+    # ------------------------------------------------------------------
+
+    def _extract_landmark_from_stored(self, id) -> StoredLandmark:
+        # print("## Pulling From Stored, Options Are... ##")
+        # for l in self._tracked_landmarks:
+        #     print(l)
+
+        results = [l for l in self._tracked_landmarks if l.id == id]
+        if len(results) != 1:
+            raise RuntimeError(f"Issue pulling landmark {id}, found {len(results)}.")
+
+        return results[0]
+
+    def _extract_landmark_from_state(self, id, state_mean):
+            state_index = self._extract_landmark_from_stored(id).index
+            return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
+
+    def _get_landmark_covariance(self, id, state_covariance):
+        i = self._extract_landmark_from_stored(id).index
+        return np.array(state_covariance[i:i+2, i:i+2], copy=True)
+
+    def _active_landmarks(self):
+        print("### EKF Currently Tracking ###")
+        for l in self._tracked_landmarks:
+            print(l)
+
+
+    @staticmethod
+    def _reguarlise_matrix(S, l=0.1):
+        assert S.shape[0] == S.shape[1], "Matrix S must be square."
+
+        # Create an identity matrix of the same size as S
+        I = np.eye(S.shape[0])
+
+        # Apply L2 regularization (add lambda * I)
+        S_reg = S + l * I
+
+        # Check if S_reg is invertible by computing its determinant
+        if np.linalg.det(S_reg) == 0:
+            raise ValueError("The regularized matrix is still singular.")
+
+        return S_reg
 

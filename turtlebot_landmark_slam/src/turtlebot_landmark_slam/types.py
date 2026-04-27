@@ -9,6 +9,7 @@ class LandmarkMeasurement:
     covariance: np.array # [2x2]
 
     id: int
+    label="NULL"
 
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
