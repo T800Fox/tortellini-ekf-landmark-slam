@@ -13,7 +13,7 @@ class EkfInterfaceNode(Node):
 
         self.real = bool(self.declare_parameter("is_real", False).value)
 
-        self.interface = EkfInterface(self, EkfOrchestrator(self.real))
+        self.interface = EkfInterface(self, EkfOrchestrator(self, self.real))
 
 
 

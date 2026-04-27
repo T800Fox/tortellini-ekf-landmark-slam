@@ -155,6 +155,11 @@ class ExtendedKalmanFilter(object):
             )
             self._tracked_landmarks.append(new_stored)
 
+            self._state_vector = np.array(prior_state, copy=True)
+            self._state_covariance = np.array(state_covariance, copy=True)
+            self._active_landmarks()
+            return  # Terminate early to prevent double-update!
+
 
         # index = self._landmark_index[landmark_measurement.id]
         identified_landmark = self._extract_landmark_from_stored(landmark_measurement.id)
@@ -173,7 +178,11 @@ class ExtendedKalmanFilter(object):
         y = Z - expected_measurement
         S = C @ state_covariance @ C.T + R
 
-        if np.linalg.det(S) < 1e-6:
+        # From Claude, bit lost on why, was getting a matrix inversion every run
+        # if np.linalg.det(S) < 1e-6:
+        if np.linalg.cond(S) > 1e10:
+
+
             print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}')
             # hack by adding reguarlisaer
             S = ExtendedKalmanFilter._reguarlise_matrix(S)
@@ -244,8 +253,12 @@ class ExtendedKalmanFilter(object):
             print(l)
 
 
+    """
+    So l is the square root of the lidar noise, l of 0.1 corresponds to 0.3 m of noise
+    Until we get better numbers I have brought the default to 2.5e-5, which should be 5mm of noise
+    """
     @staticmethod
-    def _reguarlise_matrix(S, l=0.1):
+    def _reguarlise_matrix(S, l=2.5e-5):
         assert S.shape[0] == S.shape[1], "Matrix S must be square."
 
         # Create an identity matrix of the same size as S

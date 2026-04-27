@@ -141,26 +141,33 @@ class lidarLandmarkObserver(object):
 
         
         landmark_measurements = []
+        next_new_id = len(ekf_landmarks)
+
         for d in detections:
-            d_center_coord_abs, H1, _ = Relative2AbsoluteXY(ekf_pose, d.center)
+            d_center_coord_abs, H1, H2 = Relative2AbsoluteXY(ekf_pose, d.center)
             d_xy_covariance = d.covariance[0:2, 0:2]
 
             pose_contribution = H1 @ ekf_pose_covariance @ H1.T
-            d_xy_w_pose_covariance= d_xy_covariance + pose_contribution
+            # d_xy_w_pose_covariance= d_xy_covariance + pose_contribution
+
+            meas_contribution = H2 @ d_xy_covariance @ H2.T 
+            d_xy_w_pose_covariance = meas_contribution + pose_contribution
 
             print(f"Detection @ ({d_center_coord_abs[0]},"
                   f"{d_center_coord_abs[1]})")
 
-            # first ever landmark case
+            # first ever landmark case, just accept all the measurements
             if len(ekf_landmarks) == 0:
                 # Landmark Measurements are relative
                 measurement_of_initial_landmark = LandmarkMeasurement(
                     x=d.center[0],
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
-                    id=len(ekf_landmarks)
+                    id=next_new_id
                 )
                 landmark_measurements.append(measurement_of_initial_landmark)
+
+                next_new_id += 1
                 continue
 
             # find the landmark closest to the detection
@@ -202,9 +209,10 @@ class lidarLandmarkObserver(object):
                     x=d.center[0],
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
-                    id=len(ekf_landmarks)
+                    id=next_new_id
                 )
                 landmark_measurements.append(measurement_of_new_landmark)
+                next_new_id += 1
         
         return landmark_measurements
 

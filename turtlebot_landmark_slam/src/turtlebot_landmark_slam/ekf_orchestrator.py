@@ -1,6 +1,7 @@
 from threading import Lock
 import numpy as np
 from sys import exit
+from copy import deepcopy
 
 from geometry_msgs.msg import Twist
 
@@ -8,11 +9,14 @@ from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
 from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, lidarLandmarkObserver
 
+from turtlebot_landmark_slam.uncertainty_plotter import UncertaintyPlotter
+
 class EkfOrchestrator(object):
-    def __init__(self, is_real):
+    def __init__(self, node, is_real):
         self._ekf = ExtendedKalmanFilter()
         self.real_env = is_real
         self._lock = Lock()
+        self._node = node
 
         self.ignore_over_dist = 1.5
         self.landmark_cap = 4
@@ -20,6 +24,10 @@ class EkfOrchestrator(object):
         # self.lidar_observer = SimLandmarkObserver()
 
         self.seen_landmark_ids = []
+
+        self.u_plotter = UncertaintyPlotter(
+            log_file_path='ekf_values_log.txt'
+            )
 
         if self.real_env:
             print('Not configured for real, exiting')
@@ -31,7 +39,7 @@ class EkfOrchestrator(object):
         else:
             # self.lidar_observer = SimLandmarkObserver()
             self.lidar_observer = lidarLandmarkObserver(
-                show_display=True,
+                show_display=False,
                 max_landmark_dist=5,
                 max_landmark_count=4,
                 distance_threshold=0.05,        # 0.05
@@ -93,7 +101,15 @@ class EkfOrchestrator(object):
                 print("Feeding Measurement -> ", llm)
                 self._ekf.update(llm, is_new)
 
+            t = self._node.get_clock().now().nanoseconds
+            print('t -> ',t)
+            self.u_plotter.plot_system(pose=self._ekf.pose,
+                                       pose_covar=self._ekf.pose_covariance,
+                                       landmarks=self._ekf.tracked_landmarks, 
+                                       t=t)
 
-        pass
+
+
+    
 
 

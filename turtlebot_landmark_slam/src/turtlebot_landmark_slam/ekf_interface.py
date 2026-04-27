@@ -27,7 +27,7 @@ class EkfInterface(object):
         self._last_small_motion_log_time = None
 
         self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.01).value)
-        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (30 * np.pi) / 180).value)
+        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (5 * np.pi) / 180).value)
 
         self._node.get_logger().info(
             f"[DataProvider] std_dev_linear_vel: {self.std_dev_linear_vel}"
@@ -263,7 +263,7 @@ class EkfInterface(object):
         # Note: this is an approximation but works as time steps are small          
         dx = linear_vel * dt + s_linear_vel_x
         dy = 0.0     # there is no motion along y of the robot
-        dtheta = angular_vel * dt + s_angular_vel
+        dtheta = angular_vel * dt #+ s_angular_vel
 
         # Calculate motion command (u) and set it
         motion_command = np.array([[dx], [dy], [dtheta]])
