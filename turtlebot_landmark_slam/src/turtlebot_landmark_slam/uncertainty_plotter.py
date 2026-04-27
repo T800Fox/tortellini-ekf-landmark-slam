@@ -60,7 +60,7 @@ class UncertaintyPlotter(object):
             # np.fill_diagonal(state_mat, l.mean)
 
             landmark_entry = {}
-            landmark_entry['name'] = str(l.id)# + " @ " + str(l.mean)
+            landmark_entry['name'] = str(l.lm_id)# + " @ " + str(l.mean)
             landmark_entry['labels'] = ['x', 'y']
             landmark_entry['state'] = [float(v) for v in l.mean]
             landmark_entry['covariance'] = l.covariance

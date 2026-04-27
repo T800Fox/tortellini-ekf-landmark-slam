@@ -92,14 +92,15 @@ class EkfOrchestrator(object):
             #     nextLabel += 1
             #     labeled.append(lm)
 
-            for llm in measurements:
-                is_new = False
-                if llm.id not in self.seen_landmark_ids:
-                    self.seen_landmark_ids.append(llm.id)
-                    is_new = True
+            self._ekf.update(measurements)
+            # for llm in measurements:
+            #     is_new = False
+            #     if llm.id not in self.seen_landmark_ids:
+            #         self.seen_landmark_ids.append(llm.id)
+            #         is_new = True
 
-                print("Feeding Measurement -> ", llm)
-                self._ekf.update(llm, is_new)
+            #     print("Feeding Measurement -> ", llm)
+            #     self._ekf.update(llm)
 
             t = self._node.get_clock().now().nanoseconds
             print('t -> ',t)

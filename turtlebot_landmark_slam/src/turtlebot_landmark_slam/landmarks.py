@@ -46,7 +46,7 @@ class SimLandmarkObserver(object):
 
         # landmarks_msg = LandmarksMsg()
         measurements = []
-        for id, (wx, wy) in STATIC_OBSTACLE_WORLD_POSITIONS.items():
+        for lm_id, (wx, wy) in STATIC_OBSTACLE_WORLD_POSITIONS.items():
             # Translate then rotate into robot (base_link) frame
             dx = wx - self._robot_x
             dy = wy - self._robot_y
@@ -60,7 +60,7 @@ class SimLandmarkObserver(object):
                 x=float(rx),
                 y=float(ry),
                 covariance=co_var,
-                id=id
+                lm_id=lm_id
             )
             measurements.append(lm)
 
@@ -163,7 +163,7 @@ class lidarLandmarkObserver(object):
                     x=d.center[0],
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
-                    id=next_new_id
+                    lm_id=next_new_id
                 )
                 landmark_measurements.append(measurement_of_initial_landmark)
 
@@ -181,13 +181,13 @@ class lidarLandmarkObserver(object):
                     closest_landmark = l
                     closest_dist = mahal_dist
 
-            print(f"\tClosest Landmark is {closest_landmark.id} --> "
+            print(f"\tClosest Landmark is {closest_landmark.lm_id} --> "
                   f"({closest_landmark.abs_x}, {closest_landmark.abs_y})"
                   f" w/ dist ({closest_dist})")
             
             # decide if the detection classifies as a Landmark Measurement
             if closest_dist < self.mahal_associate_cutoff: 
-                print(f"Picked up {closest_landmark.id} "
+                print(f"Picked up {closest_landmark.lm_id} "
                       f"@ ABS->({d_center_coord_abs[0]}, {d_center_coord_abs[1]})")
                 
                 # Landmark Measurements are relative
@@ -195,7 +195,7 @@ class lidarLandmarkObserver(object):
                     x=d.center[0],
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
-                    id=closest_landmark.id
+                    lm_id=closest_landmark.lm_id
                 )
                 landmark_measurements.append(measurement_of_existing_landmark)
 
@@ -209,7 +209,7 @@ class lidarLandmarkObserver(object):
                     x=d.center[0],
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
-                    id=next_new_id
+                    lm_id=next_new_id
                 )
                 landmark_measurements.append(measurement_of_new_landmark)
                 next_new_id += 1

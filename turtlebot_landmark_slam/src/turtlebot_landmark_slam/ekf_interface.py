@@ -6,13 +6,11 @@ from threading import Lock
 import rclpy
 from rclpy.node import Node
 
-
 from sensor_msgs.msg import PointCloud, LaserScan
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import TwistStamped
 
-from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
 from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.utils import yaw_from_quaternion
@@ -214,13 +212,13 @@ class EkfInterface(object):
 
     def _publishLandmarkMap(self):
         landmark_poses = self._orchestrator._ekf.state_mean[3:].flatten()
-        seen_landmarks = list(self._orchestrator.seen_landmark_ids)
+        # seen_landmarks = list(self._orchestrator.seen_landmark_ids)
         marker_array_msg = MarkerArray()
 
         for i in range(len(landmark_poses) // 2):
             marker = Marker()
             marker.header.frame_id = "odom"
-            marker.id = seen_landmarks[i]
+            marker.id = i
             marker.type = Marker.CYLINDER
             marker.action = Marker.ADD
             marker.pose.position.x = float(landmark_poses[2 * i])

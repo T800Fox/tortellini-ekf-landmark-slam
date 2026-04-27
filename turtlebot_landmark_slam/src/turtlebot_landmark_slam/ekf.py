@@ -1,40 +1,24 @@
-import numpy as np
-from turtlebot_landmark_slam.types import LandmarkMeasurement, ControlMeasurement, StoredLandmark
-import turtlebot_landmark_slam.utils as utils
 from copy import deepcopy
+import numpy as np
 
+from turtlebot_landmark_slam.types import se2, ControlMeasurement, LandmarkMeasurement, StoredLandmark
+import turtlebot_landmark_slam.utils as utils
 
 class ExtendedKalmanFilter(object):
-    """EKF-SLAM filter that jointly estimates robot pose and landmark positions.
-
-    The state vector has shape (3 + 2*M, 1) where M is the number of observed
-    landmarks:  [x, y, yaw, lmk0_x, lmk0_y, lmk1_x, lmk1_y, ...]^T
-    """
 
     def __init__(self) -> None:
-        # State vector — grows as new landmarks are discovered (shape N x 1)
         self._state_vector = np.array([[0.0], [0.0], [0.0]])
 
-        sigma_position = np.sqrt(10 ** (-3))
-        sigma_orientation = np.sqrt(10 ** (-3))
-
-        # Initial 3x3 robot-pose covariance block (grows to N x N with landmarks)
+        sigma_position = np.sqrt(10.0 ** -3)
+        sigma_orientation = np.sqrt(10.0 ** -3)
         self._state_covariance = np.array(
-            [
-                [sigma_position**2, 0.0, 0.0],
-                [0.0, sigma_position**2, 0.0],
-                [0.0, 0.0, sigma_orientation**2],
-            ]
+          [
+            [sigma_position ** 2, 0., 0.],
+            [0., sigma_position ** 2, 0.],
+            [0., 0., sigma_orientation ** 2]
+          ]
         )
-
-        # Maps landmark label -> starting row index in the state vector
-        # self._landmark_index = {}
-
         self._tracked_landmarks = []
-
-    # ------------------------------------------------------------------
-    # State accessors
-    # ------------------------------------------------------------------
 
     @property
     def x(self):
@@ -50,154 +34,186 @@ class ExtendedKalmanFilter(object):
 
     @property
     def pose(self):
-        """Robot pose as a (3,) array [x, y, yaw]."""
         return np.array([self.x, self.y, self.yaw], copy=True)
 
     @property
     def pose_covariance(self):
-        """3x3 covariance block for the robot pose."""
         return np.array(self._state_covariance[0:3, 0:3], copy=True)
 
     @property
     def state_mean(self):
-        """Full state vector (robot pose + landmark positions), shape (N, 1)."""
         return np.array(self._state_vector, copy=True)
 
     @property
+    def num_landmarks(self):
+        landmark_poses = self.state_mean[3:]
+        return int(len(landmark_poses)/2)
+
+
+    # @property
+    # def landmarks(self):
+    #     landmark_array = [self.landmark(label) for label in self._landmark_index.keys()]
+    #     if len(landmark_array) == 0:
+    #         return np.array([])
+    #     return np.stack(landmark_array)
+
+
+    # def landmark(self, label):
+    #     return self.extract_landmark_from_state(label, self.state_mean)
+
+    def pose_as_se2(self) -> se2:
+        x,y,theta = self.pose.flatten()
+        return se2(x, y, theta)
+
+    def _extract_landmark_from_stored(self, lm_id) -> StoredLandmark:
+        # print("## Pulling From Stored, Options Are... ##")
+        # for l in self._tracked_landmarks:
+        #     print(l)
+
+        results = [l for l in self._tracked_landmarks if l.lm_id == lm_id]
+        if len(results) != 1:
+            raise RuntimeError(f"Issue pulling landmark {lm_id}, found {len(results)}.")
+
+        return results[0]
+
+    def extract_landmark_from_state(self, lm_id, state_mean):
+        state_index = self._extract_landmark_from_stored(lm_id).index
+        return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
+    
+    def get_landmark_covariance(self, lm_id, state_covariance):
+            i = self._extract_landmark_from_stored(lm_id).index
+            return np.array(state_covariance[i:i+2, i:i+2], copy=True)
+    
+    def active_landmarks(self):
+        print("### EKF Currently Tracking ###")
+        for l in self._tracked_landmarks:
+            print(l)
+
+
+    @property
     def state_covariance(self):
-        """Full N x N state covariance matrix."""
         return np.array(self._state_covariance, copy=True)
     
     @property
     def tracked_landmarks(self):
         return deepcopy(self._tracked_landmarks)
 
-    # ------------------------------------------------------------------
-    # Public Functions
-    # ------------------------------------------------------------------
-
-    def predict(self, control: ControlMeasurement):
-        """Propagate the state forward using the motion model.
-
-        Only the robot-pose block [0:3] of the state and covariance is updated;
-        landmark estimates are unaffected by the motion model.
-        """
-        # print("Predict Called")
-
-        motion_command = control.motion_vector
-        motion_covariance = control.covariance
+    def predict(self, control_meaurement: ControlMeasurement):
+        motion_command = control_meaurement.motion_vector
+        motion_covariance = control_meaurement.covariance
         pose = self._state_vector[0:3]
-
-        predicted_robot_pose, F, W = utils.Relative2AbsolutePose(pose, motion_command)
-
-        N = self._state_covariance.shape[0]
-        F_full = np.eye(N)
-        F_full[0:3, 0:3] = F
-
+        predicted_robot_pose, F, W = utils.motion_model(pose, motion_command)
         np.copyto(self._state_vector[0:3], predicted_robot_pose)
 
-        # predicted_state_covariance = F @ self.pose_covariance @ F.T + W @ motion_covariance @ W.T
-        # np.copyto(self._state_covariance[0:3, 0:3], predicted_state_covariance)
+        # Update robot-robot covariance block
+        P_rr = self._state_covariance[0:3, 0:3]
+        self._state_covariance[0:3, 0:3] = F @ P_rr @ F.T + W @ motion_covariance @ W.T
 
-        # From Claude, only pose uncertainty was being updated.     
-        self._state_covariance = F_full @ self._state_covariance @ F_full.T
-        self._state_covariance[0:3, 0:3] += W @ motion_covariance @ W.T
-        
-    def update(self, landmark_measurement: LandmarkMeasurement, is_new: bool):
-        """Correct the state estimate using a landmark measurement.
+        # Update robot-landmark cross-covariance blocks (F_aug applied to full P)
+        n = self._state_covariance.shape[0]
+        if n > 3:
+            P_rl = self._state_covariance[0:3, 3:]
+            self._state_covariance[0:3, 3:] = F @ P_rl
+            self._state_covariance[3:, 0:3] = (F @ P_rl).T
 
-        If `is_new` is True the landmark is appended to the state vector and
-        the covariance matrix is augmented before the standard EKF update.
-        """
-        print(f"Update Called --> tracking: {len(self._tracked_landmarks) }") 
+
+    def update(self, landmark_measurements: list[LandmarkMeasurement]):
+        if len(landmark_measurements) == 0:
+            return
 
         pose = self.pose
         state_covariance = self.state_covariance
-        prior_state = self.state_mean
-        pose_covar = self.pose_covariance
-        pose = prior_state[0:3]
+        x = self.state_mean  # Prior state mean
 
-        if is_new:
-            landmark_abs_pos, H1, H2 = utils.Relative2AbsoluteXY(pose, [landmark_measurement.x, landmark_measurement.y])
+        C_list = []
+        Z_list = []
+        expected_measurements_list = []
+        R_list = []
 
-            insertion_index = prior_state.shape[0]
-            # self._landmark_index[landmark_measurement.id] = insertion_index
-            print(f"Landmark {landmark_measurement.id} inserted at {insertion_index}")
+        # construct and update size of state cov if new landmarks needed
+        for landmark_measurement in landmark_measurements:
+            lm_id = landmark_measurement.lm_id
 
-            
+            if lm_id not in [l.lm_id for l in self._tracked_landmarks]:
+                print(f"Gotten new landmark {landmark_measurement.lm_id}")
+                # New landmark detected
+                landmark_measured_abs, H1, H2 = utils.inverse_sensor_model(pose, [landmark_measurement.x, landmark_measurement.y])
 
-            prior_state = np.vstack((prior_state, landmark_abs_pos))
-            
-            # if len(self._landmark_index) == 1:
-            #     Plx = np.dot(H1, pose_covar)
-            # else:
-            #     prior_state_covariance = deepcopy(state_covariance)
-            #     Prm = prior_state_covariance[0:3, 3:]
-            #     Plx = np.dot(H1, np.bmat([[pose_covar, Prm]]))
+                index = x.shape[0]
+                print(f"Insertion index {index}")
+                # self._landmark_index[label] = index
+                x = np.vstack((x, landmark_measured_abs))
 
-            # From Claude, works for all landmark counts?
-            Plx = H1 @ state_covariance[0:3, :]   
-            
-            Pll = np.dot(H1, np.dot(pose_covar, H1.T)) + np.dot(H2, np.dot(landmark_measurement.covariance, H2.T))
+                Prr = self.pose_covariance
+                Plx = H1 @ state_covariance[0:3, :]
+                # if len(self._tracked_landmarks) == 1:
+                #     Plx = np.dot(H1, Prr)
+                # else:
+                #     last_state_covariance = deepcopy(state_covariance)
+                #     Prm = last_state_covariance[0:3, 3:]
+                #     Plx = np.dot(H1, np.bmat([[Prr, Prm]]))
 
-            P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
-            state_covariance = np.array(P, copy=True)
+                Pll = np.dot(H1, np.dot(Prr, H1.T)) + np.dot(H2, np.dot(landmark_measurement.covariance, H2.T))
 
-            landmark_covariance = np.array(state_covariance[insertion_index:insertion_index+2,
-                                                    insertion_index:insertion_index+2], copy=True)
-
-            new_stored = StoredLandmark(
-                abs_x=landmark_abs_pos[0],
-                abs_y=landmark_abs_pos[1],
-                covariance=landmark_covariance,
-                index=insertion_index,
-                id=landmark_measurement.id
-            )
-            self._tracked_landmarks.append(new_stored)
-
-            self._state_vector = np.array(prior_state, copy=True)
-            self._state_covariance = np.array(state_covariance, copy=True)
-            self._active_landmarks()
-            return  # Terminate early to prevent double-update!
+                P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
+                state_covariance = np.array(P, copy=True)
 
 
-        # index = self._landmark_index[landmark_measurement.id]
-        identified_landmark = self._extract_landmark_from_stored(landmark_measurement.id)
-        index = identified_landmark.index
-        estimated_landmark_data = self._extract_landmark_from_state(landmark_measurement.id, prior_state)
-        expected_measurement, Hr, Hl = utils.Absolute2RelativeXY(pose, estimated_landmark_data)
+                landmark_covariance = np.array(state_covariance[index:index+2,
+                                                    index:index+2], copy=True)
+                new_stored = StoredLandmark(
+                    abs_x=landmark_measured_abs[0],
+                    abs_y=landmark_measured_abs[1],
+                    covariance=landmark_covariance,
+                    index=index,
+                    lm_id=landmark_measurement.lm_id
+                )
+                self._tracked_landmarks.append(new_stored)
 
-        Z = np.array([[landmark_measurement.x], [landmark_measurement.y]])
-        R = landmark_measurement.covariance
 
-        C_cols = state_covariance.shape[0]
-        C = np.zeros((2, C_cols))
-        C[:, 0:3] = Hr                     # From Claude, include pose uncertainty 
-        C[:, index:index+2] = Hl       
+        for landmark_measurement in landmark_measurements:
+            lm_id = landmark_measurement.lm_id
+            estimated_landmark = self.extract_landmark_from_state(lm_id, x)
+            expected_measurement, Hr, Hl = utils.sensor_model(pose, estimated_landmark)
 
-        y = Z - expected_measurement
+            Z_list.append(np.array([[landmark_measurement.x], [landmark_measurement.y]]))
+            expected_measurements_list.append(expected_measurement)
+            R_list.append(landmark_measurement.covariance)
+
+            # Construct the C matrix
+
+            identified_landmark = self._extract_landmark_from_stored(landmark_measurement.lm_id)
+            index = identified_landmark.index
+
+            C_cols = state_covariance.shape[0]
+            C = np.zeros((2, C_cols))
+            C[:, :3] = Hr
+
+            # add Hl at correct index
+            C[:, index:index+2] = Hl
+            C_list.append(C)
+
+
+        # Stack all measurements and Jacobians
+        C = np.vstack(C_list)
+        Z = np.vstack(Z_list)
+
+        R = ExtendedKalmanFilter.block_diag(R_list)
+
+        expected_measurements = np.vstack(expected_measurements_list)
+
+        y = Z - expected_measurements  # Innovation term
         S = C @ state_covariance @ C.T + R
 
-        # From Claude, bit lost on why, was getting a matrix inversion every run
-        # if np.linalg.det(S) < 1e-6:
-        if np.linalg.cond(S) > 1e10:
-
-
-            print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}')
+        if np.linalg.det(S) < 1e-6:
+            # print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}')
             # hack by adding reguarlisaer
-            S = ExtendedKalmanFilter._reguarlise_matrix(S)
+            S = ExtendedKalmanFilter.reguarlise_matrix(S)
 
-        # K = state_covariance @ C.T @ np.linalg.inv(S)
-        # posterior_state_mean = prior_state + K @ y
-        # I = np.eye(len(posterior_state_mean))
-        # posterior_state_covariance = (I - K @ C) @ state_covariance
-
-        # From Claude, apparently it will prevent errors from floating point arithmetic (Joseph Form)
         K = state_covariance @ C.T @ np.linalg.inv(S)
-        posterior_state_mean = prior_state + K @ y
-        I = np.eye(state_covariance.shape[0])   # size off state_covariance, not state_mean
-        IKC = I - K @ C
-        posterior_state_covariance = IKC @ state_covariance @ IKC.T + K @ R @ K.T
+        posterior_state_mean = x + K @ y
+        I = np.eye(len(posterior_state_mean))
+        posterior_state_covariance = (I - K @ C) @ state_covariance
 
         # Update state
         # np.copyto(self._state_vector, posterior_state_mean)
@@ -205,60 +221,14 @@ class ExtendedKalmanFilter(object):
         self._state_covariance = np.array(posterior_state_covariance, copy=True)
 
         # Update tracked landmark data
-        updated_landmark_coords = self._extract_landmark_from_state(landmark_measurement.id, self.state_mean)
-        updated_landmark_covariance = self._get_landmark_covariance(landmark_measurement.id, self.state_covariance)
+        updated_landmark_coords = self.extract_landmark_from_state(landmark_measurement.lm_id, self.state_mean)
+        updated_landmark_covariance = self.get_landmark_covariance(landmark_measurement.lm_id, self.state_covariance)
         identified_landmark.abs_x = updated_landmark_coords[0]
         identified_landmark.abs_y = updated_landmark_coords[1]
         identified_landmark.covariance = updated_landmark_covariance
-        
 
-        self._active_landmarks()
-
-    def update_landmark_label(self, landmark_id, new_label):
-        try:
-            landmark_to_update = self._extract_landmark_from_stored(landmark_id)
-        except RuntimeError:
-            print(f"[ERROR] Issue pulling Landmark with id {landmark_id}")
-            return
-
-        landmark_to_update.label = new_label
-        return
-
-    # ------------------------------------------------------------------
-    # Helper Functions
-    # ------------------------------------------------------------------
-
-    def _extract_landmark_from_stored(self, id) -> StoredLandmark:
-        # print("## Pulling From Stored, Options Are... ##")
-        # for l in self._tracked_landmarks:
-        #     print(l)
-
-        results = [l for l in self._tracked_landmarks if l.id == id]
-        if len(results) != 1:
-            raise RuntimeError(f"Issue pulling landmark {id}, found {len(results)}.")
-
-        return results[0]
-
-    def _extract_landmark_from_state(self, id, state_mean):
-            state_index = self._extract_landmark_from_stored(id).index
-            return np.array([state_mean[state_index][0], state_mean[state_index+1][0]])
-
-    def _get_landmark_covariance(self, id, state_covariance):
-        i = self._extract_landmark_from_stored(id).index
-        return np.array(state_covariance[i:i+2, i:i+2], copy=True)
-
-    def _active_landmarks(self):
-        print("### EKF Currently Tracking ###")
-        for l in self._tracked_landmarks:
-            print(l)
-
-
-    """
-    So l is the square root of the lidar noise, l of 0.1 corresponds to 0.3 m of noise
-    Until we get better numbers I have brought the default to 2.5e-5, which should be 5mm of noise
-    """
     @staticmethod
-    def _reguarlise_matrix(S, l=2.5e-5):
+    def reguarlise_matrix(S, l=0.1):
         assert S.shape[0] == S.shape[1], "Matrix S must be square."
 
         # Create an identity matrix of the same size as S
@@ -273,3 +243,32 @@ class ExtendedKalmanFilter(object):
 
         return S_reg
 
+    @staticmethod
+    def block_diag(R_list):
+        """
+        Constructs a block diagonal measurement covariance matrix R
+        from a list of individual measurement covariance matrices using only NumPy.
+
+        Args:
+            R_list (list of np.ndarray): List of (2x2) covariance matrices R_i.
+
+        Returns:
+            np.ndarray: The block diagonal measurement covariance matrix.
+        """
+        # Compute total size of the resulting block matrix
+        rows = sum(R.shape[0] for R in R_list)
+        cols = sum(R.shape[1] for R in R_list)
+
+        # Initialize a zero matrix of the required size
+        R = np.zeros((rows, cols))
+
+        # Fill the block diagonal positions
+        row_start, col_start = 0, 0
+        for R_i in R_list:
+            r, c = R_i.shape
+            R[row_start:row_start+r, col_start:col_start+c] = R_i
+            row_start += r
+            col_start += c
+
+        return R
+     
