@@ -1,0 +1,8 @@
+(measured in mm from 0-0)
+Orange left turn: x = 100, y = 0
+Green Stop:  	  	x = 25,  y = 75 
+Yellow Roundabout:x = 150, y = 50
+Red Stop: 		    x = 75,  y = 125
+Red Left Turn: 		x = 50,  y = 175
+Blue Straight: 		x = 100, y = 200
+Red Right Turn: 	x = 150, y = 250
