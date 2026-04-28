@@ -131,14 +131,27 @@ class UncertaintyPlotter(object):
             with open(self.log_file_path, 'a') as f:
                 f.write(", ".join(line_parts) + "\n")
 
-        self.plot_bar(ax=self.axs[0, 1],
-                       title="Mean",
-                       x_label='',
-                       y_label="Value (m)",
-                       colours=current_colours,
-                       labels=current_labels,
-                       values=current_state_values
-                      )
+
+        landmarks_x = [gm['state'][0] for gm in labeled_data]
+        landmarks_y = [gm['state'][1] for gm in labeled_data]
+        l_colours = [gm['colour'] for gm in labeled_data]
+
+        self.plot_enviroment(ax=self.axs[0,1],
+                             title="Enviroment Map",
+                             x_label="X Value (m)",
+                             y_label="Y Value (m)",
+                             x_vals=landmarks_x,
+                             y_vals=landmarks_y,
+                             colours=l_colours)
+
+        # self.plot_bar(ax=self.axs[0, 1],
+        #                title="Mean",
+        #                x_label='',
+        #                y_label="Value (m)",
+        #                colours=current_colours,
+        #                labels=current_labels,
+        #                values=current_state_values
+        #               )
         
         self.plot_bar(ax=self.axs[1,1],
                       title="Standard Deviation",
@@ -172,6 +185,25 @@ class UncertaintyPlotter(object):
         plt.tight_layout()
         plt.draw()
         plt.pause(0.001)
+
+    def plot_enviroment(self, ax, title, x_label, y_label, x_vals, y_vals, colours):
+        ax.clear()
+        ax.set_facecolor('darkgrey')
+        ax.set_xlabel(x_label, fontweight='bold', color='white')
+        ax.set_ylabel(y_label, fontweight='bold', color='white')
+        ax.invert_xaxis()
+        ax.grid(True, linestyle=":", alpha=0.6)
+        ax.set_title(title, fontweight='bold', color='white')
+
+        ax.scatter(y_vals, x_vals, c=colours, s=300)
+
+        ax.tick_params(axis='x', colors='white')
+        for label in ax.get_xticklabels():
+            label.set_fontweight('bold')
+
+        ax.tick_params(axis='y', colors='white')
+        for label in ax.get_yticklabels():
+            label.set_fontweight('bold')
 
     def plot_bar(self, ax, title, x_label, y_label, labels, colours, values):
         # print(values)

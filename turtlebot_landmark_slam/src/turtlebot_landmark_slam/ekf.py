@@ -105,16 +105,33 @@ class ExtendedKalmanFilter(object):
         predicted_robot_pose, F, W = utils.motion_model(pose, motion_command)
         np.copyto(self._state_vector[0:3], predicted_robot_pose)
 
-        # Update robot-robot covariance block
-        P_rr = self._state_covariance[0:3, 0:3]
+        # # Update robot-robot covariance block
+        # P_rr = self._state_covariance[0:3, 0:3]
+        # self._state_covariance[0:3, 0:3] = F @ P_rr @ F.T + W @ motion_covariance @ W.T
+
+        # # Update robot-landmark cross-covariance blocks (F_aug applied to full P)
+        # n = self._state_covariance.shape[0]
+        # if n > 3:
+        #     P_rl = self._state_covariance[0:3, 3:]
+        #     self._state_covariance[0:3, 3:] = F @ P_rl
+        #     self._state_covariance[3:, 0:3] = (F @ P_rl).T
+        
+
+        # Claude, this chunk really helped with the weird decay of landmark uncertainty
+        # Something about information getting leaked from the covariance at each run?
+        # Snapshot the prior blocks BEFORE writing back (numpy slices return
+        # views, so without .copy() the second use of P_rl would read the
+        # already-updated values, applying F twice on one side of the
+        # cross-covariance).
+        P_rr = self._state_covariance[0:3, 0:3].copy()
         self._state_covariance[0:3, 0:3] = F @ P_rr @ F.T + W @ motion_covariance @ W.T
 
-        # Update robot-landmark cross-covariance blocks (F_aug applied to full P)
         n = self._state_covariance.shape[0]
         if n > 3:
-            P_rl = self._state_covariance[0:3, 3:]
-            self._state_covariance[0:3, 3:] = F @ P_rl
-            self._state_covariance[3:, 0:3] = (F @ P_rl).T
+            P_rl = self._state_covariance[0:3, 3:].copy()
+            new_P_rl = F @ P_rl
+            self._state_covariance[0:3, 3:] = new_P_rl
+            self._state_covariance[3:, 0:3] = new_P_rl.T       
 
 
     def update(self, landmark_measurements: list[LandmarkMeasurement]):
@@ -154,10 +171,16 @@ class ExtendedKalmanFilter(object):
                 #     Prm = last_state_covariance[0:3, 3:]
                 #     Plx = np.dot(H1, np.bmat([[Prr, Prm]]))
 
-                Pll = np.dot(H1, np.dot(Prr, H1.T)) + np.dot(H2, np.dot(landmark_measurement.covariance, H2.T))
+                # Pll = np.dot(H1, np.dot(Prr, H1.T)) + np.dot(H2, np.dot(landmark_measurement.covariance, H2.T))
 
-                P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
-                state_covariance = np.array(P, copy=True)
+                # P = np.bmat([[state_covariance, Plx.T], [Plx, Pll]])
+                # state_covariance = np.array(P, copy=True)
+                Pll = H1 @ Prr @ H1.T + H2 @ landmark_measurement.covariance @ H2.T
+
+                state_covariance = np.block([
+                    [state_covariance, Plx.T],
+                    [Plx,              Pll  ],
+                ])
 
 
                 landmark_covariance = np.array(state_covariance[index:index+2,
@@ -211,10 +234,26 @@ class ExtendedKalmanFilter(object):
             # hack by adding reguarlisaer
             S = ExtendedKalmanFilter.reguarlise_matrix(S)
 
+        # K = state_covariance @ C.T @ np.linalg.inv(S)
+        # posterior_state_mean = x + K @ y
+        # I = np.eye(len(posterior_state_mean))
+        # posterior_state_covariance = (I - K @ C) @ state_covariance
+
+
+        # From Claude, Joseph form ensures the covariance mat stays PSD and symmetic
+        # was brought in during the landmark uncertainty decay, but not sure if it was IT for the fix
         K = state_covariance @ C.T @ np.linalg.inv(S)
         posterior_state_mean = x + K @ y
+
         I = np.eye(len(posterior_state_mean))
-        posterior_state_covariance = (I - K @ C) @ state_covariance
+        IKC = I - K @ C
+
+        # Joseph form: numerically stable, guaranteed symmetric & PSD as long
+        # as inputs are. Replaces the simpler (I - KC) P form.
+        posterior_state_covariance = IKC @ state_covariance @ IKC.T + K @ R @ K.T
+
+        # Enforce symmetry against accumulated round-off
+        posterior_state_covariance = 0.5 * (posterior_state_covariance + posterior_state_covariance.T)
 
         # wrap pi vals
         theta = posterior_state_mean[2]

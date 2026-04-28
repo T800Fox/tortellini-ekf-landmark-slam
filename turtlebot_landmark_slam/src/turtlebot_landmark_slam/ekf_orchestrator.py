@@ -19,7 +19,7 @@ class EkfOrchestrator(object):
         self._node = node
 
         self.ignore_over_dist = 1.5
-        self.landmark_cap = 4
+        self.landmark_cap = 20
 
         self.lidar_observer = SimLandmarkObserver()
 
@@ -30,16 +30,23 @@ class EkfOrchestrator(object):
             )
 
         if self.real_env:
-            print('Not configured for real, exiting')
-            exit()
-            # self.lidar_observer = lidarCylinderObserver(
-            #     show_display=True,
-            #     max_landmark_dist=self.ignore_over_dist
-            #     )
+            # print('Not configured for real, exiting')
+            # exit()
+            self.lidar_observer = lidarLandmarkObserver(
+                show_display=False,
+                max_landmark_dist=1,
+                max_landmark_count=4,
+                distance_threshold=0.05,    
+                min_points=4,
+                max_radius=0.09,        
+                min_radius=0.005,           
+                max_mse=1.0e-4,              
+                min_arc_angle=np.radians(90)  
+                )
         else:
             # self.lidar_observer = SimLandmarkObserver()
             self.lidar_observer = lidarLandmarkObserver(
-                show_display=False,
+                show_display=True,
                 max_landmark_dist=5,
                 max_landmark_count=4,
                 distance_threshold=0.05,        # 0.05

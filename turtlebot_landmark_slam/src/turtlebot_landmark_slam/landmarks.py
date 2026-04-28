@@ -147,6 +147,12 @@ class lidarLandmarkObserver(object):
             d_center_coord_abs, H1, H2 = Relative2AbsoluteXY(ekf_pose, d.center)
             d_xy_covariance = d.covariance[0:2, 0:2]
 
+            # Claude
+            # Enforce a realistic minimum sensor noise floor.
+            # Lidar bearing/range error → ~2-5cm position noise on a circle fit.
+            MIN_MEAS_VAR = 0.02 ** 2   # 2 cm std-dev floor; tune to your lidar
+            d_xy_covariance = d_xy_covariance + MIN_MEAS_VAR * np.eye(2)
+
             pose_contribution = H1 @ ekf_pose_covariance @ H1.T
             # d_xy_w_pose_covariance= d_xy_covariance + pose_contribution
 

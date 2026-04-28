@@ -25,7 +25,7 @@ class EkfInterface(object):
         self._last_small_motion_log_time = None
 
         self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.01).value)
-        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (5 * np.pi) / 180).value)
+        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (45 * np.pi) / 180).value)
 
         self._node.get_logger().info(
             f"[DataProvider] std_dev_linear_vel: {self.std_dev_linear_vel}"
@@ -253,13 +253,18 @@ class EkfInterface(object):
         )
     
     def _constructMotionWithCovariance(self, linear_vel: float, angular_vel: float, std_dev_linear_vel: float, std_dev_angular_vel: float, dt: float) -> Tuple[np.array, np.array]:
-        s_linear_vel_x = self.std_dev_linear_vel * linear_vel * dt #  5 cm / seg 
-        s_linear_vel_y = 0.000000001 # just a small value as there is no motion along y of the robot
-        s_angular_vel = self.std_dev_angular_vel * angular_vel * dt  # 2 deg / seg
+        # s_linear_vel_x = self.std_dev_linear_vel * linear_vel * dt #  5 cm / seg 
+        # s_linear_vel_y = 0.000000001 # just a small value as there is no motion along y of the robot
+        # s_angular_vel = self.std_dev_angular_vel * angular_vel * dt  # 2 deg / seg
+
+        # Claude, added a floor for low speed 
+        s_linear_vel_x = (self.std_dev_linear_vel * abs(linear_vel) + 0.005) * dt
+        s_linear_vel_y = 1e-3 * dt
+        s_angular_vel  = (self.std_dev_angular_vel * abs(angular_vel) + np.radians(2.0)) * dt
 
         # compute the motion command [dx, dy, dtheta]. On the real robot we dont add any perterbations
         # Note: this is an approximation but works as time steps are small          
-        dx = linear_vel * dt + s_linear_vel_x
+        dx = linear_vel * dt #+ s_linear_vel_x
         dy = 0.0     # there is no motion along y of the robot
         dtheta = angular_vel * dt #+ s_angular_vel
 
