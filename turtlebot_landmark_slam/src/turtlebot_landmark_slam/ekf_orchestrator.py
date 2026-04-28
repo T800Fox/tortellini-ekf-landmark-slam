@@ -21,7 +21,7 @@ class EkfOrchestrator(object):
         self.ignore_over_dist = 1.5
         self.landmark_cap = 4
 
-        # self.lidar_observer = SimLandmarkObserver()
+        self.lidar_observer = SimLandmarkObserver()
 
         self.seen_landmark_ids = []
 
@@ -65,6 +65,7 @@ class EkfOrchestrator(object):
                 raise RuntimeError(f"+{self.landmark_cap} Landmarks, Aborting.")
 
             print("Collecting Landmark Measurements")
+            # measurements = self.lidar_observer.measure_landmarks()
             measurements = self.lidar_observer.measure_landmarks(pose,
                                                                  pose_covariance, 
                                                                  rel_points, 

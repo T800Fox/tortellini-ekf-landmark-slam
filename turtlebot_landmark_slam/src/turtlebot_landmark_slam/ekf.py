@@ -135,6 +135,7 @@ class ExtendedKalmanFilter(object):
             lm_id = landmark_measurement.lm_id
 
             if lm_id not in [l.lm_id for l in self._tracked_landmarks]:
+
                 print(f"Gotten new landmark {landmark_measurement.lm_id}")
                 # New landmark detected
                 landmark_measured_abs, H1, H2 = utils.inverse_sensor_model(pose, [landmark_measurement.x, landmark_measurement.y])
@@ -215,17 +216,21 @@ class ExtendedKalmanFilter(object):
         I = np.eye(len(posterior_state_mean))
         posterior_state_covariance = (I - K @ C) @ state_covariance
 
+        # wrap pi vals
+        theta = posterior_state_mean[2]
+        wrapped = self.wrap_to_minus_pi_pi(theta)
+        posterior_state_mean[2] = wrapped
+
         # Update state
-        # np.copyto(self._state_vector, posterior_state_mean)
         self._state_vector = np.array(posterior_state_mean, copy=True)
         self._state_covariance = np.array(posterior_state_covariance, copy=True)
 
-        # Update tracked landmark data
-        updated_landmark_coords = self.extract_landmark_from_state(landmark_measurement.lm_id, self.state_mean)
-        updated_landmark_covariance = self.get_landmark_covariance(landmark_measurement.lm_id, self.state_covariance)
-        identified_landmark.abs_x = updated_landmark_coords[0]
-        identified_landmark.abs_y = updated_landmark_coords[1]
-        identified_landmark.covariance = updated_landmark_covariance
+        # Resync ALL tracked landmarks from the updated state
+        for stored in self._tracked_landmarks:
+            coords = self.extract_landmark_from_state(stored.lm_id, self.state_mean)
+            stored.abs_x = coords[0]
+            stored.abs_y = coords[1]
+            stored.covariance = self.get_landmark_covariance(stored.lm_id, self.state_covariance)       
 
     @staticmethod
     def reguarlise_matrix(S, l=0.1):
@@ -271,4 +276,9 @@ class ExtendedKalmanFilter(object):
             col_start += c
 
         return R
+    
+    @staticmethod
+    def wrap_to_minus_pi_pi(x):
+        """Wraps angles (in radians) to the range [-pi, pi]."""
+        return np.arctan2(np.sin(x), np.cos(x))
      

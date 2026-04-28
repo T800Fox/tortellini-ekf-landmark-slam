@@ -39,8 +39,6 @@ class ControlMeasurement:
     def __str__(self):
         return f"sx: {self.dx} dy: {self.dy} dtheta: {self.dtheta} cov: {self.covariance}"
 
-    
-
 @dataclass
 class StoredLandmark:
     abs_x: float    # x component of abs. landmark coords.

@@ -212,7 +212,7 @@ class EkfInterface(object):
 
     def _publishLandmarkMap(self):
         landmark_poses = self._orchestrator._ekf.state_mean[3:].flatten()
-        # seen_landmarks = list(self._orchestrator.seen_landmark_ids)
+
         marker_array_msg = MarkerArray()
 
         for i in range(len(landmark_poses) // 2):
