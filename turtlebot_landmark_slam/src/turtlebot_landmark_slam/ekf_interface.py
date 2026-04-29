@@ -24,8 +24,11 @@ class EkfInterface(object):
         self._last_motion_msg_time = None
         self._last_small_motion_log_time = None
 
-        self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.01).value)
-        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (45 * np.pi) / 180).value)
+        """
+        tue_test_0 -> lin : 0.2, ang : 60
+        """
+        self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.2).value) 
+        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (60 * np.pi) / 180).value)
 
         self._node.get_logger().info(
             f"[DataProvider] std_dev_linear_vel: {self.std_dev_linear_vel}"
@@ -88,13 +91,11 @@ class EkfInterface(object):
             self._last_motion_msg_time = now
             return
         
-
         # ### FOR SIMULATED LANDMARKS ONLY ###
         # x = msg.pose.pose.position.x
         # y = msg.pose.pose.position.y
         # theta = yaw_from_quaternion(msg.pose.pose.orientation)
         # self._orchestrator.lidar_observer.update_pose([x,y,theta])
-
 
         dt = (now - self._last_motion_msg_time).nanoseconds / 1e9
         self._last_motion_msg_time = now
@@ -129,12 +130,11 @@ class EkfInterface(object):
         dtheta = motion_command[2][0]
 
         motion_measurement = ControlMeasurement(dx, dy, dtheta, motion_covariance)
-
         self._orchestrator.motion_handler(motion_measurement)
 
-        # self.publishOdometry(
-        #     self._orchestrator._ekf.pose,
-        #     self._orchestrator._ekf.pose_covariance)
+        self.publishOdometry(
+            self._orchestrator._ekf.pose,
+            self._orchestrator._ekf.pose_covariance)
 
         
     def _lidar_callback(self, msg):

@@ -19,7 +19,7 @@ class EkfOrchestrator(object):
         self._node = node
 
         self.ignore_over_dist = 1.5
-        self.landmark_cap = 20
+        self.landmark_cap = -1
 
         self.lidar_observer = SimLandmarkObserver()
 
@@ -32,10 +32,11 @@ class EkfOrchestrator(object):
         if self.real_env:
             # print('Not configured for real, exiting')
             # exit()
+            self.landmark_cap = 20
             self.lidar_observer = lidarLandmarkObserver(
                 show_display=False,
                 max_landmark_dist=1,
-                max_landmark_count=4,
+                max_landmark_count=self.landmark_cap,
                 distance_threshold=0.05,    
                 min_points=4,
                 max_radius=0.09,        
@@ -45,10 +46,11 @@ class EkfOrchestrator(object):
                 )
         else:
             # self.lidar_observer = SimLandmarkObserver()
+            self.landmark_cap = 4
             self.lidar_observer = lidarLandmarkObserver(
                 show_display=True,
                 max_landmark_dist=5,
-                max_landmark_count=4,
+                max_landmark_count=self.landmark_cap,
                 distance_threshold=0.05,        # 0.05
                 min_points=4,
                 max_radius=0.16,                # 0.2          -- higest reading was 0.18
@@ -81,34 +83,13 @@ class EkfOrchestrator(object):
                 print('empty measurements')
                 return
             
-            
-            # self.lidar_observer.updateLocationData(float(pose[0]), float(pose[1]), float(pose[2]))
-            # lidar_observed_landmarks = self.lidar_observer.attemptAssociation(rel_points)
-            # empty = self.lidar_observer.inital_landmark_label
-            # unlabeled = [lm for lm in lidar_observed_landmarks if lm.label == empty]
-            # labeled = [lm for lm in lidar_observed_landmarks if lm.label != empty]
-
             """
             camera_observed_landmarks = ...
             if there's a match between a camera observed landmark and an unlabeled one, 
             update the label and add to labeled set            
             """
-            # this just keeps the ball rolling until then...
-            # nextLabel = len(landmarks)
-            # for lm in unlabeled:
-            #     lm.label = str(nextLabel)
-            #     nextLabel += 1
-            #     labeled.append(lm)
 
             self._ekf.update(measurements)
-            # for llm in measurements:
-            #     is_new = False
-            #     if llm.id not in self.seen_landmark_ids:
-            #         self.seen_landmark_ids.append(llm.id)
-            #         is_new = True
-
-            #     print("Feeding Measurement -> ", llm)
-            #     self._ekf.update(llm)
 
             t = self._node.get_clock().now().nanoseconds
             print('t -> ',t)

@@ -229,10 +229,27 @@ class ExtendedKalmanFilter(object):
         y = Z - expected_measurements  # Innovation term
         S = C @ state_covariance @ C.T + R
 
-        if np.linalg.det(S) < 1e-6:
-            # print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}')
+        print("Innovation term has shape -> ", y.shape)
+
+        if np.linalg.det(S) < 1e-9:
+            print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}, Regularising...')
             # hack by adding reguarlisaer
             S = ExtendedKalmanFilter.reguarlise_matrix(S)
+
+        # Singularity check based on minimum eigenvalue, not determinant.
+        # det(S) scales as eigval^n, so for an 8x8 S with healthy 1e-3 eigvals,
+        # det(S) ≈ 1e-24 — below ANY reasonable threshold. Using det(S) < 1e-6
+        # silently triggers regularization on every multi-landmark update,
+        # adding 0.1 * I to S and crippling the Kalman gain by ~50x.
+        # The condition number, or smallest eigenvalue, is the right test.
+        # try:
+        #     min_eig = np.linalg.eigvalsh(S).min()
+        # except np.linalg.LinAlgError:
+        #     min_eig = -1.0
+        # if min_eig < 1e-9:
+        #     print(f'WARNING: near-singular S, min eigval={min_eig:.3e}, regularizing')
+        #     # Add a much smaller regularizer — only enough to make S invertible.
+        #     S = S + 1e-9 * np.eye(S.shape[0])
 
         # K = state_covariance @ C.T @ np.linalg.inv(S)
         # posterior_state_mean = x + K @ y
@@ -271,8 +288,12 @@ class ExtendedKalmanFilter(object):
             stored.abs_y = coords[1]
             stored.covariance = self.get_landmark_covariance(stored.lm_id, self.state_covariance)       
 
+
+    """
+    I have a memory that this l value is the expected covariance of lidar values?
+    """
     @staticmethod
-    def reguarlise_matrix(S, l=0.1):
+    def reguarlise_matrix(S, l=0.0025):# l= 0.1
         assert S.shape[0] == S.shape[1], "Matrix S must be square."
 
         # Create an identity matrix of the same size as S
