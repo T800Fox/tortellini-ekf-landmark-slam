@@ -18,6 +18,9 @@ class ExtendedKalmanFilter(object):
             [0., 0., sigma_orientation ** 2]
           ]
         )
+
+        self.innovation_ceiling = 0.1
+
         self._tracked_landmarks = []
 
     @property
@@ -146,6 +149,7 @@ class ExtendedKalmanFilter(object):
         Z_list = []
         expected_measurements_list = []
         R_list = []
+        landmark_list = []
 
         # construct and update size of state cov if new landmarks needed
         for landmark_measurement in landmark_measurements:
@@ -198,25 +202,45 @@ class ExtendedKalmanFilter(object):
         for landmark_measurement in landmark_measurements:
             lm_id = landmark_measurement.lm_id
             estimated_landmark = self.extract_landmark_from_state(lm_id, x)
+            estimated_landmark_data = self._extract_landmark_from_stored(lm_id)
+
             expected_measurement, Hr, Hl = utils.sensor_model(pose, estimated_landmark)
 
-            Z_list.append(np.array([[landmark_measurement.x], [landmark_measurement.y]]))
-            expected_measurements_list.append(expected_measurement)
-            R_list.append(landmark_measurement.covariance)
+            Z_l = np.array([[landmark_measurement.x], [landmark_measurement.y]])
+            y_l = Z_l - expected_measurement
 
-            # Construct the C matrix
+            # yc -> innovation for coordinate
+            accept_observation = True
+            for i, yc in enumerate(y_l):
+                if abs(yc) > self.innovation_ceiling:
+                    legend = ['x', 'y']
+                    print(f"Rejecting Obs. of {estimated_landmark_data.lm_id};"
+                          f" {legend[i]} innovation abs({yc}) > {self.innovation_ceiling}")
+                    accept_observation = False
 
-            identified_landmark = self._extract_landmark_from_stored(landmark_measurement.lm_id)
-            index = identified_landmark.index
+            if accept_observation:
+                estimated_landmark_data.innovation_x = float(y_l[0])
+                estimated_landmark_data.innovation_x = float(y_l[1])
 
-            C_cols = state_covariance.shape[0]
-            C = np.zeros((2, C_cols))
-            C[:, :3] = Hr
+                expected_measurements_list.append(expected_measurement)
+                Z_list.append(Z_l)
+                R_list.append(landmark_measurement.covariance)
 
-            # add Hl at correct index
-            C[:, index:index+2] = Hl
-            C_list.append(C)
+                # Construct the C matrix
+                index = estimated_landmark_data.index
+                # landmark_list.append(identified_landmark)
 
+                C_cols = state_covariance.shape[0]
+                C = np.zeros((2, C_cols))
+                C[:, :3] = Hr
+
+                # add Hl at correct index
+                C[:, index:index+2] = Hl
+                C_list.append(C)
+
+        if len(Z_list) == 0:
+            print("All observations exceeded Innovation Ceiling; skipping update...")
+            return
 
         # Stack all measurements and Jacobians
         C = np.vstack(C_list)
@@ -229,27 +253,18 @@ class ExtendedKalmanFilter(object):
         y = Z - expected_measurements  # Innovation term
         S = C @ state_covariance @ C.T + R
 
-        print("Innovation term has shape -> ", y.shape)
+        # # associate innovations to stored landmark objects for logging
+        # for i, l in enumerate(landmark_list):
+        #     l.innovation_x = y[2*i]
+        #     l.innovation_y = y[2*i + 1]
+
+
+
 
         if np.linalg.det(S) < 1e-9:
             print(f'WARNING!!! Non-invertible S Matrix {np.linalg.det(S)}, Regularising...')
             # hack by adding reguarlisaer
             S = ExtendedKalmanFilter.reguarlise_matrix(S)
-
-        # Singularity check based on minimum eigenvalue, not determinant.
-        # det(S) scales as eigval^n, so for an 8x8 S with healthy 1e-3 eigvals,
-        # det(S) ≈ 1e-24 — below ANY reasonable threshold. Using det(S) < 1e-6
-        # silently triggers regularization on every multi-landmark update,
-        # adding 0.1 * I to S and crippling the Kalman gain by ~50x.
-        # The condition number, or smallest eigenvalue, is the right test.
-        # try:
-        #     min_eig = np.linalg.eigvalsh(S).min()
-        # except np.linalg.LinAlgError:
-        #     min_eig = -1.0
-        # if min_eig < 1e-9:
-        #     print(f'WARNING: near-singular S, min eigval={min_eig:.3e}, regularizing')
-        #     # Add a much smaller regularizer — only enough to make S invertible.
-        #     S = S + 1e-9 * np.eye(S.shape[0])
 
         # K = state_covariance @ C.T @ np.linalg.inv(S)
         # posterior_state_mean = x + K @ y

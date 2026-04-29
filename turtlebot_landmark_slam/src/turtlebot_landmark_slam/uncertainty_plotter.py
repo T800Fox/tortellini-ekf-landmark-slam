@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
-
+import warnings
 
 
 class UncertaintyPlotter(object):
@@ -26,7 +26,7 @@ class UncertaintyPlotter(object):
                 ]
         
         self.timesteps = []
-        self.running_mean = {}
+        self.running_innovations = {}
         self.running_deviation = {}
 
         if log_file_path is not None:
@@ -49,6 +49,7 @@ class UncertaintyPlotter(object):
 
         state_entry = {}
         state_entry['name'] = 'p'
+        state_entry['type'] = 'state'
         state_entry['labels'] = ['x', 'y', 'theta']
         state_entry['state'] = [float(v) for v in list(pose)]
         state_entry['covariance'] = pose_covar
@@ -61,55 +62,41 @@ class UncertaintyPlotter(object):
 
             landmark_entry = {}
             landmark_entry['name'] = str(l.lm_id)# + " @ " + str(l.mean)
+            landmark_entry['type'] = 'landmark'
             landmark_entry['labels'] = ['x', 'y']
             landmark_entry['state'] = [float(v) for v in l.mean]
             landmark_entry['covariance'] = l.covariance
+            landmark_entry['innovation_x'] = l.innovation_x
+            landmark_entry['innovation_y'] = l.innovation_y
             labeled.append(landmark_entry)
 
         return labeled
 
     def plot_system(self, pose, pose_covar, landmarks, t):
-        # for l in labeled_data:
-        #     print("Name ->")
-        #     print('\t', l['name'])
-        #     print("Labels ->")
-        #     print('\t', l['labels'])
-        #     print("State ->")
-        #     print('\t', l['state'])
-        #     print("Covariance ->")
-        #     print('\t', l['covariance'])
-        #     print("Deviations ->")
-        #     print('\t', self.extract_state_deviations(l['covariance']))
-
         labeled_data = self.decompose_and_label_covariance_matrices(pose, pose_covar, landmarks)
 
         self.timesteps.append(t)
 
         current_labels = []
         current_colours = []
-        current_state_values = []
         current_deviation_values = []
 
-        # if self.log_file_path is not None:
         line_parts = [f"time : {t}"]
 
-        # gaussian matrix?
+        # consistent landmark colours
+        for i, gm in enumerate(labeled_data):
+            labeled_data[i]['colour'] = self.COLORS[i % len(self.COLORS)]
+
+        # gm -> gaussian matrix
         for i, gm in enumerate(labeled_data):
 
             assert len(gm['state']) == len(gm['labels'])
 
-            labeled_data[i]['colour'] = self.COLORS[i % len(self.COLORS)]
-
+            # State and Covariance Data -> Applies to everything
             deviations = self.extract_state_deviations(gm['covariance'])
             for j in range(len(deviations)):
                 key = f"{gm['name']}_{gm['labels'][j]}"
 
-
-                self.update_running(runningValueSet=self.running_mean, 
-                                    label=f"{gm['name']}_{gm['labels'][j]}", 
-                                    value=gm['state'][j], 
-                                    time=t,
-                                    colour=gm['colour'])
                
                 self.update_running(runningValueSet=self.running_deviation, 
                                     label=f"{gm['name']}_{gm['labels'][j]}", 
@@ -120,13 +107,32 @@ class UncertaintyPlotter(object):
                 current_labels.append(f"{gm['name']}_{gm['labels'][j]}")
                 current_colours.append(gm['colour'])
                 
-                current_state_values.append(gm['state'][j])
+                # current_state_values.append(gm['state'][j])
                 current_deviation_values.append(deviations[j])
 
                 
                 line_parts.append(f"{key}_mean : {gm['state'][j]}")
                 line_parts.append(f"{key}_std : {deviations[j]}")
 
+            # Innovation Data -> Only applies to landmarks
+            for lgm in [l for l in labeled_data if l['type'] == 'landmark']: 
+                self.update_running(runningValueSet=self.running_innovations, 
+                                    label=f"{lgm['name']}_innovation_x", 
+                                    value=lgm['innovation_x'], 
+                                    time=t,
+                                    colour=lgm['colour'])
+                
+                line_parts.append(f"{lgm['name']}_innovation_x : {lgm['innovation_x']}")
+
+                self.update_running(runningValueSet=self.running_innovations, 
+                                    label=f"{lgm['name']}_innovation_y", 
+                                    value=lgm['innovation_y'], 
+                                    time=t,
+                                    colour=lgm['colour'])
+                line_parts.append(f"{lgm['name']}_innovation_y : {lgm['innovation_y']}")
+                
+            
+        # dump to logfile
         if self.log_file_path is not None:
             with open(self.log_file_path, 'a') as f:
                 f.write(", ".join(line_parts) + "\n")
@@ -135,7 +141,6 @@ class UncertaintyPlotter(object):
         landmarks_x = [gm['state'][0] for gm in labeled_data]
         landmarks_y = [gm['state'][1] for gm in labeled_data]
         l_colours = [gm['colour'] for gm in labeled_data]
-
         self.plot_enviroment(ax=self.axs[0,1],
                              title="Enviroment Map",
                              x_label="X Value (m)",
@@ -144,34 +149,18 @@ class UncertaintyPlotter(object):
                              y_vals=landmarks_y,
                              colours=l_colours)
 
-        # self.plot_bar(ax=self.axs[0, 1],
-        #                title="Mean",
-        #                x_label='',
-        #                y_label="Value (m)",
-        #                colours=current_colours,
-        #                labels=current_labels,
-        #                values=current_state_values
-        #               )
-        
-        self.plot_bar(ax=self.axs[1,1],
-                      title="Standard Deviation",
-                      x_label='',
-                      y_label="Value (m)",
-                      colours=current_colours,
-                      labels=current_labels,
-                      values=current_deviation_values
-                      )
 
         self.setup_line_plots(self.axs[0,0], 
-                              title="Mean Over Time", 
+                              title="Innovations (Suprise w/ Landmark Postions) Over Time ", 
                               y_label="Value (m)", 
                               x_label="Time (s)")
-        for k in self.running_mean.keys():
+        for k in self.running_innovations.keys():
             self.plot_line(self.axs[0,0], 
-                           self.running_mean[k]['time'],
-                           self.running_mean[k]['data'], 
-                           colour=self.running_mean[k]['colour'])
+                           self.running_innovations[k]['time'],
+                           self.running_innovations[k]['data'], 
+                           colour=self.running_innovations[k]['colour'])
             
+
         self.setup_line_plots(self.axs[1,0], 
                               title="Standard Deviation Over Time", 
                               y_label="Value (m)", 
@@ -181,6 +170,23 @@ class UncertaintyPlotter(object):
                            self.running_deviation[k]['time'], 
                            self.running_deviation[k]['data'], 
                            colour=self.running_deviation[k]['colour'])
+            
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            y_min = self.axs[1,0].get_lines()[0].get_ydata().min()
+            y_max = self.axs[1,0].get_lines()[0].get_ydata().max() 
+            self.axs[1, 1].set_ylim(y_min, y_max)
+
+
+        self.plot_bar(ax=self.axs[1,1],
+                title="Current Standard Deviation",
+                x_label='',
+                y_label="Value (m)",
+                colours=current_colours,
+                labels=current_labels,
+                values=current_deviation_values
+                )
 
         plt.tight_layout()
         plt.draw()
@@ -244,7 +250,6 @@ class UncertaintyPlotter(object):
         for label in ax.get_yticklabels():
             label.set_fontweight('bold')
         # ax.set_yticklabels(ax.get_yticks(), fontweight='bold', color='white')
-
 
     def plot_line(self, ax, x_data , y_data, colour):
         ax.plot(x_data, y_data, color=colour)

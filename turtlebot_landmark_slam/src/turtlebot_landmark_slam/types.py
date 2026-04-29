@@ -45,6 +45,9 @@ class StoredLandmark:
     abs_y: float    # y component of abs. landmark coords.
     covariance: np.array # [2x2]
 
+    innovation_x=0.0
+    innovation_y=0.0
+
     index: int      # index in state variable
     lm_id: int      # name of landmark
     label="NULL"
