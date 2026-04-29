@@ -1,8 +1,21 @@
+"""
+MTRX4701 2026 Assignment 3: Simultaneous Localisation and Mapping
+File: uncertainty_plotter.py
+Author(s): 530 499 451
+
+This module 'pops the hood' on ekf.py's ExtendedKalmanFilter. Giving realtime data for...
+- Running and current standard deviation values for the elements of the state matrix
+- A map of the enviroment; robot pose and landmarks
+- The running values for the innovation terms of each landmark
+All the data is grouped by colour to help connecting objects to values within the EKF
+
+Designed to be run after each update step.
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 import warnings
-
 
 class UncertaintyPlotter(object):
     def __init__(self, log_file_path=None):
@@ -38,13 +51,135 @@ class UncertaintyPlotter(object):
         else:
             self.log_file_path = None
 
+    # ------------------------------------------------------------------
+    # Public Methods
+    # ------------------------------------------------------------------
 
-    def extract_state_deviations(self, covariance_matrix):
-        state_covariances = list(np.diag(covariance_matrix))
+    def plot_system(self, pose, pose_covar, landmarks, t):
+        labeled_data = self._decompose_and_label_covariance_matrices(pose, pose_covar, landmarks)
 
-        return [np.sqrt(s_c) for s_c in state_covariances]
+        self.timesteps.append(t)
 
-    def decompose_and_label_covariance_matrices(self, pose, pose_covar, landmarks):
+        current_labels = []
+        current_colours = []
+        current_deviation_values = []
+
+        line_parts = [f"time : {t}"]
+
+        # consistent landmark colours
+        for i, gm in enumerate(labeled_data):
+            labeled_data[i]['colour'] = self.COLORS[i % len(self.COLORS)]
+
+        # gm -> gaussian matrix
+        for i, gm in enumerate(labeled_data):
+
+            assert len(gm['state']) == len(gm['labels'])
+
+            # State and Covariance Data -> Applies to everything
+            deviations = self._extract_deviations(gm['covariance'])
+            for j in range(len(deviations)):
+                key = f"{gm['name']}_{gm['labels'][j]}"
+
+               
+                self._update_running(runningValueSet=self.running_deviation, 
+                                    label=f"{gm['name']}_{gm['labels'][j]}", 
+                                    value=deviations[j], 
+                                    time=t,
+                                    colour=gm['colour'])
+                
+                current_labels.append(f"{gm['name']}_{gm['labels'][j]}")
+                current_colours.append(gm['colour'])
+                
+                # current_state_values.append(gm['state'][j])
+                current_deviation_values.append(deviations[j])
+
+                
+                line_parts.append(f"{key}_mean : {gm['state'][j]}")
+                line_parts.append(f"{key}_std : {deviations[j]}")
+
+            # Innovation Data -> Only applies to landmarks
+            for lgm in [l for l in labeled_data if l['type'] == 'landmark']: 
+                self._update_running(runningValueSet=self.running_innovations, 
+                                    label=f"{lgm['name']}_innovation_x", 
+                                    value=lgm['innovation_x'], 
+                                    time=t,
+                                    colour=lgm['colour'])
+                
+                line_parts.append(f"{lgm['name']}_innovation_x : {lgm['innovation_x']}")
+
+                self._update_running(runningValueSet=self.running_innovations, 
+                                    label=f"{lgm['name']}_innovation_y", 
+                                    value=lgm['innovation_y'], 
+                                    time=t,
+                                    colour=lgm['colour'])
+                line_parts.append(f"{lgm['name']}_innovation_y : {lgm['innovation_y']}")
+                
+            
+        # dump to logfile
+        if self.log_file_path is not None:
+            with open(self.log_file_path, 'a') as f:
+                f.write(", ".join(line_parts) + "\n")
+
+
+        landmarks_x = [gm['state'][0] for gm in labeled_data]
+        landmarks_y = [gm['state'][1] for gm in labeled_data]
+        l_colours = [gm['colour'] for gm in labeled_data]
+        self._plot_enviroment(ax=self.axs[0,1],
+                             title="Enviroment Map",
+                             x_label="X Value (m)",
+                             y_label="Y Value (m)",
+                             x_vals=landmarks_x,
+                             y_vals=landmarks_y,
+                             colours=l_colours)
+
+
+        self._setup_line_plots(self.axs[0,0], 
+                              title="Innovations (Suprise w/ Landmark Postions) Over Time ", 
+                              y_label="Value (m)", 
+                              x_label="Time (s)")
+        for k in self.running_innovations.keys():
+            self.plot_line(self.axs[0,0], 
+                           self.running_innovations[k]['time'],
+                           self.running_innovations[k]['data'], 
+                           colour=self.running_innovations[k]['colour'])
+            
+
+        self._setup_line_plots(self.axs[1,0], 
+                              title="Standard Deviation Over Time", 
+                              y_label="Value (m)", 
+                              x_label="Time (s)")
+        for k in self.running_deviation.keys():
+            self.plot_line(self.axs[1,0], 
+                           self.running_deviation[k]['time'], 
+                           self.running_deviation[k]['data'], 
+                           colour=self.running_deviation[k]['colour'])
+            
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            y_min = self.axs[1,0].get_lines()[0].get_ydata().min()
+            y_max = self.axs[1,0].get_lines()[0].get_ydata().max() 
+            self.axs[1, 1].set_ylim(y_min, y_max)
+
+
+        self._plot_bar(ax=self.axs[1,1],
+                title="Current Standard Deviation",
+                x_label='',
+                y_label="Value (m)",
+                colours=current_colours,
+                labels=current_labels,
+                values=current_deviation_values
+                )
+
+        plt.tight_layout()
+        plt.draw()
+        plt.pause(0.001)
+
+    # ------------------------------------------------------------------
+    # Private Data Management Helpers
+    # ------------------------------------------------------------------
+
+    def _decompose_and_label_covariance_matrices(self, pose, pose_covar, landmarks):
         labeled = []
 
         state_entry = {}
@@ -72,127 +207,25 @@ class UncertaintyPlotter(object):
 
         return labeled
 
-    def plot_system(self, pose, pose_covar, landmarks, t):
-        labeled_data = self.decompose_and_label_covariance_matrices(pose, pose_covar, landmarks)
+    def _extract_deviations(self, covariance_matrix):
+        state_covariances = list(np.diag(covariance_matrix))
 
-        self.timesteps.append(t)
+        return [np.sqrt(s_c) for s_c in state_covariances]
+    
+    def _update_running(self, runningValueSet:dict, label, value, time, colour):
+        if label not in runningValueSet:
+            runningValueSet[label] = {'colour': colour,
+                                      'data': [value],
+                                      'time': [time]}
+        else:
+            runningValueSet[label]['time'].append(time)
+            runningValueSet[label]['data'].append(value)
 
-        current_labels = []
-        current_colours = []
-        current_deviation_values = []
+    # ------------------------------------------------------------------
+    # Private Plotting Helpers
+    # ------------------------------------------------------------------
 
-        line_parts = [f"time : {t}"]
-
-        # consistent landmark colours
-        for i, gm in enumerate(labeled_data):
-            labeled_data[i]['colour'] = self.COLORS[i % len(self.COLORS)]
-
-        # gm -> gaussian matrix
-        for i, gm in enumerate(labeled_data):
-
-            assert len(gm['state']) == len(gm['labels'])
-
-            # State and Covariance Data -> Applies to everything
-            deviations = self.extract_state_deviations(gm['covariance'])
-            for j in range(len(deviations)):
-                key = f"{gm['name']}_{gm['labels'][j]}"
-
-               
-                self.update_running(runningValueSet=self.running_deviation, 
-                                    label=f"{gm['name']}_{gm['labels'][j]}", 
-                                    value=deviations[j], 
-                                    time=t,
-                                    colour=gm['colour'])
-                
-                current_labels.append(f"{gm['name']}_{gm['labels'][j]}")
-                current_colours.append(gm['colour'])
-                
-                # current_state_values.append(gm['state'][j])
-                current_deviation_values.append(deviations[j])
-
-                
-                line_parts.append(f"{key}_mean : {gm['state'][j]}")
-                line_parts.append(f"{key}_std : {deviations[j]}")
-
-            # Innovation Data -> Only applies to landmarks
-            for lgm in [l for l in labeled_data if l['type'] == 'landmark']: 
-                self.update_running(runningValueSet=self.running_innovations, 
-                                    label=f"{lgm['name']}_innovation_x", 
-                                    value=lgm['innovation_x'], 
-                                    time=t,
-                                    colour=lgm['colour'])
-                
-                line_parts.append(f"{lgm['name']}_innovation_x : {lgm['innovation_x']}")
-
-                self.update_running(runningValueSet=self.running_innovations, 
-                                    label=f"{lgm['name']}_innovation_y", 
-                                    value=lgm['innovation_y'], 
-                                    time=t,
-                                    colour=lgm['colour'])
-                line_parts.append(f"{lgm['name']}_innovation_y : {lgm['innovation_y']}")
-                
-            
-        # dump to logfile
-        if self.log_file_path is not None:
-            with open(self.log_file_path, 'a') as f:
-                f.write(", ".join(line_parts) + "\n")
-
-
-        landmarks_x = [gm['state'][0] for gm in labeled_data]
-        landmarks_y = [gm['state'][1] for gm in labeled_data]
-        l_colours = [gm['colour'] for gm in labeled_data]
-        self.plot_enviroment(ax=self.axs[0,1],
-                             title="Enviroment Map",
-                             x_label="X Value (m)",
-                             y_label="Y Value (m)",
-                             x_vals=landmarks_x,
-                             y_vals=landmarks_y,
-                             colours=l_colours)
-
-
-        self.setup_line_plots(self.axs[0,0], 
-                              title="Innovations (Suprise w/ Landmark Postions) Over Time ", 
-                              y_label="Value (m)", 
-                              x_label="Time (s)")
-        for k in self.running_innovations.keys():
-            self.plot_line(self.axs[0,0], 
-                           self.running_innovations[k]['time'],
-                           self.running_innovations[k]['data'], 
-                           colour=self.running_innovations[k]['colour'])
-            
-
-        self.setup_line_plots(self.axs[1,0], 
-                              title="Standard Deviation Over Time", 
-                              y_label="Value (m)", 
-                              x_label="Time (s)")
-        for k in self.running_deviation.keys():
-            self.plot_line(self.axs[1,0], 
-                           self.running_deviation[k]['time'], 
-                           self.running_deviation[k]['data'], 
-                           colour=self.running_deviation[k]['colour'])
-            
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            y_min = self.axs[1,0].get_lines()[0].get_ydata().min()
-            y_max = self.axs[1,0].get_lines()[0].get_ydata().max() 
-            self.axs[1, 1].set_ylim(y_min, y_max)
-
-
-        self.plot_bar(ax=self.axs[1,1],
-                title="Current Standard Deviation",
-                x_label='',
-                y_label="Value (m)",
-                colours=current_colours,
-                labels=current_labels,
-                values=current_deviation_values
-                )
-
-        plt.tight_layout()
-        plt.draw()
-        plt.pause(0.001)
-
-    def plot_enviroment(self, ax, title, x_label, y_label, x_vals, y_vals, colours):
+    def _plot_enviroment(self, ax, title, x_label, y_label, x_vals, y_vals, colours):
         ax.clear()
         ax.set_facecolor('darkgrey')
         ax.set_xlabel(x_label, fontweight='bold', color='white')
@@ -211,7 +244,7 @@ class UncertaintyPlotter(object):
         for label in ax.get_yticklabels():
             label.set_fontweight('bold')
 
-    def plot_bar(self, ax, title, x_label, y_label, labels, colours, values):
+    def _plot_bar(self, ax, title, x_label, y_label, labels, colours, values):
         # print(values)
         # print(colours)
         # print(labels)
@@ -237,7 +270,7 @@ class UncertaintyPlotter(object):
         # ax.set_yticks(values)
         # ax.set_yticklabels(values, fontweight='bold')
     
-    def setup_line_plots(self, ax, title, x_label, y_label):
+    def _setup_line_plots(self, ax, title, x_label, y_label):
         ax.clear()
         ax.set_facecolor('darkgrey')
         # ax.set_aspect("equal")
@@ -254,11 +287,4 @@ class UncertaintyPlotter(object):
     def plot_line(self, ax, x_data , y_data, colour):
         ax.plot(x_data, y_data, color=colour)
 
-    def update_running(self, runningValueSet:dict, label, value, time, colour):
-        if label not in runningValueSet:
-            runningValueSet[label] = {'colour': colour,
-                                      'data': [value],
-                                      'time': [time]}
-        else:
-            runningValueSet[label]['time'].append(time)
-            runningValueSet[label]['data'].append(value)
+

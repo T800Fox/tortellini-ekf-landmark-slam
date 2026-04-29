@@ -375,3 +375,21 @@ def sensor_model(pose, absolute_xy):
         [-np.sin(theta1), np.cos(theta1)]])
 
     return np.array([[landmark_position_rel[0][0]], [landmark_position_rel[1][0]]]), H, J
+
+@staticmethod
+def mahalanobis_distance(detection_mean, detection_covariance, stored_mean, stored_covariance):
+    delta = np.array([
+        float(detection_mean[0] - stored_mean[0]),
+        float(detection_mean[1] - stored_mean[1])
+    ])
+
+    S = detection_covariance + stored_covariance
+
+    try:
+        S_inv = np.linalg.inv(S)
+    except np.linalg.LinAlgError:
+        return float('inf')
+
+    # Scalar squared Mahalanobis distance
+    d_squared = float(delta @ S_inv @ delta)
+    return d_squared

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 import numpy as np
-from landmarks_msg.msg import LandmarkMsg
 
 @dataclass
 class LandmarkMeasurement:
@@ -13,17 +12,6 @@ class LandmarkMeasurement:
 
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
-
-    # @classmethod
-    # def from_landmark_msg(cls, msg: LandmarkMsg):
-    #     covariance = np.array([[msg.s_x, 0.0],
-    #                                 [0.0, msg.s_y]])
-    #     # Deal with measurement covariance close to zero
-    #     if msg.s_x < 10**(-4) and msg.s_y < 10**(-4):
-    #         print("Measurement covariance is close to zero.")
-    #         covariance = np.array([[0.01,0.0], [0.0, 0.01]])   # 10 cm ??  
-    #     measurement = cls(msg.x, msg.y, msg.label, covariance)
-    #     return measurement
 
 @dataclass
 class ControlMeasurement:

@@ -1,9 +1,34 @@
+"""
+MTRX4701 2026 Assignment 3: Simultaneous Localisation and Mapping
+File: landmarks.py
+Author(s): 530 499 451
+
+Module for generating relative measurements of some existing landmarks.
+
+Simulation version makes up static ones and uses the ground truth of the turtlebot.
+
+Lidar version attempts to associate point clouds (relative) taken from a supplied pose (gaussian), 
+with supplied landmarks (gaussian). Detections are done with a tuned version the code provided.
+
+Any possible detections of cylinders are expressed as a detection and converted into the absolute frame
+according to the pose. For each detection, the landmark with the closest mahalanobis distance is idenified.
+ - distance < 9.21 --> 99.1% certainty that the detection is that landmark.
+ - distance > 13.21 --> 99.9% certainty that the detection is not the landmark --> new landmark
+ - Anything in the middle is treated as a garbage reading and dumped.
+
+These observation's relative distances from the robot are then passed on in a list of
+LandmarkMeasurement's (also gaussian).
+
+If the user wishes, a plot can be displayed of the landmark (cylinder) detections from the robot's
+frame.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle as pltCircle
 
 from turtlebot_landmark_slam.types import LandmarkMeasurement, StoredLandmark
-from turtlebot_landmark_slam.utils import yaw_from_quaternion, euclidianDistance, Relative2AbsoluteXY
+from turtlebot_landmark_slam.utils import mahalanobis_distance, euclidianDistance, Relative2AbsoluteXY
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
 
 STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
@@ -12,59 +37,6 @@ STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
     3: ( 1.0, -1.0),  # obstacle_3
     4: ( 1.0,  1.0),  # obstacle_4
 }
-
-class SimLandmarkObserver(object):
-
-    def __init__(self) -> None:
-        pass
-        # Cached robot pose in the odom/world frame
-        self._robot_x: float = 0.0
-        self._robot_y: float = 0.0
-        self._robot_yaw: float = 0.0
-        self._robot_pose_received: bool = False
-
-        # # Measurement variance (m²) on the diagonal of the 2×2 covariance matrix.
-        # # types.py: covariance = diag(s_x, s_y), so 0.01 m² → ~0.1 m std dev.
-        self.std_dev_landmark_x = 0.01
-
-        self.std_dev_landmark_y = 0.01
-
-    def update_pose(self, pose) -> None:
-        """Cache the robot pose from ground-truth odometry."""
-        self._robot_x = pose[0]
-        self._robot_y = pose[1]
-        self._robot_yaw = pose[2]
-        self._robot_pose_received = True
-
-    def measure_landmarks(self) -> list[LandmarkMeasurement]:
-        if not self._robot_pose_received:
-            print("No pose data")
-            return []
-
-        cos_yaw = np.cos(self._robot_yaw)
-        sin_yaw = np.sin(self._robot_yaw)
-
-        # landmarks_msg = LandmarksMsg()
-        measurements = []
-        for lm_id, (wx, wy) in STATIC_OBSTACLE_WORLD_POSITIONS.items():
-            # Translate then rotate into robot (base_link) frame
-            dx = wx - self._robot_x
-            dy = wy - self._robot_y
-            rx =  cos_yaw * dx + sin_yaw * dy
-            ry = -sin_yaw * dx + cos_yaw * dy
-
-            co_var = np.array([[float(self.std_dev_landmark_x),0],
-                               [0,float(self.std_dev_landmark_y)]])
-
-            lm = LandmarkMeasurement(
-                x=float(rx),
-                y=float(ry),
-                covariance=co_var,
-                lm_id=lm_id
-            )
-            measurements.append(lm)
-
-        return measurements
 
 class lidarLandmarkObserver(object):
     def __init__(self,
@@ -104,11 +76,14 @@ class lidarLandmarkObserver(object):
         -------------------------------------------------------------
         """
         self.mahal_associate_cutoff = 9.21
-        self.mahal_new_base_val = 16
+        self.mahal_new_base_val = 16 # 13.82 wasn't cutting it...
 
         if self.show_display:
             self.fig, self.ax0 = plt.subplots(figsize=(10, 8))
-            # self.fig, (self.ax0, self.ax1) = plt.subplots(1, 2, figsize=(10, 8))
+
+    # ------------------------------------------------------------------
+    # Public Methods
+    # ------------------------------------------------------------------
 
     def measure_landmarks(self, ekf_pose, 
                           ekf_pose_covariance, 
@@ -180,7 +155,7 @@ class lidarLandmarkObserver(object):
             # consider the pose and xy uncertainty
             closest_dist = 999999
             for l in ekf_landmarks:
-                mahal_dist = _mahalanobisDistance(d_center_coord_abs, d_xy_w_pose_covariance,
+                mahal_dist = mahalanobis_distance(d_center_coord_abs, d_xy_w_pose_covariance,
                                                                     l.mean, l.covariance)
 
                 if mahal_dist < closest_dist:
@@ -221,6 +196,10 @@ class lidarLandmarkObserver(object):
                 next_new_id += 1
         
         return landmark_measurements
+
+    # ------------------------------------------------------------------
+    # Private Helpers
+    # ------------------------------------------------------------------
 
     def _updateLiveDisplay(self, rel_points, rel_detections):
         # pretty hud for debugging
@@ -297,63 +276,55 @@ class lidarLandmarkObserver(object):
         plt.draw()
         plt.pause(0.001)
 
-def _mahalanobisDistance(detection_mean, detection_covariance, stored_mean, stored_covariance):
-    delta = np.array([
-        float(detection_mean[0] - stored_mean[0]),
-        float(detection_mean[1] - stored_mean[1])
-    ])
+class SimLandmarkObserver(object):
 
-    # Combined innovation covariance: sum of both uncertainty ellipses
-    S = detection_covariance + stored_covariance
+    def __init__(self) -> None:
+        pass
+        # Cached robot pose in the odom/world frame
+        self._robot_x: float = 0.0
+        self._robot_y: float = 0.0
+        self._robot_yaw: float = 0.0
+        self._robot_pose_received: bool = False
 
-    try:
-        S_inv = np.linalg.inv(S)
-    except np.linalg.LinAlgError:
-        return float('inf')
+        # # Measurement variance (m²) on the diagonal of the 2×2 covariance matrix.
+        # # types.py: covariance = diag(s_x, s_y), so 0.01 m² → ~0.1 m std dev.
+        self.std_dev_landmark_x = 0.01
 
-    # Scalar squared Mahalanobis distance
-    d_squared = float(delta @ S_inv @ delta)
-    return d_squared
+        self.std_dev_landmark_y = 0.01
 
-    # # Distance between Gaussians, w/ safety! 
-    # # if mean is too small defaults to, mean = 1e-3 and covariance = 0.3
+    def update_pose(self, pose) -> None:
+        """Cache the robot pose from ground-truth odometry."""
+        self._robot_x = pose[0]
+        self._robot_y = pose[1]
+        self._robot_yaw = pose[2]
+        self._robot_pose_received = True
 
-    # mahalanobis_mean = euclidianDistance(detection_mean[0], detection_mean[1],
-    #                                             stored_mean[0], stored_mean[1])
+    def measure_landmarks(self) -> list[LandmarkMeasurement]:
+        if not self._robot_pose_received:
+            print("No pose data")
+            return []
 
+        cos_yaw = np.cos(self._robot_yaw)
+        sin_yaw = np.sin(self._robot_yaw)
 
-    # # # print('dx ->\n', dx)
-    # # # print('dy ->\n', dy)
-    # # mahalanobis_mean = np.sqrt(dx**2 + dy**2)
+        # landmarks_msg = LandmarksMsg()
+        measurements = []
+        for lm_id, (wx, wy) in STATIC_OBSTACLE_WORLD_POSITIONS.items():
+            # Translate then rotate into robot (base_link) frame
+            dx = wx - self._robot_x
+            dy = wy - self._robot_y
+            rx =  cos_yaw * dx + sin_yaw * dy
+            ry = -sin_yaw * dx + cos_yaw * dy
 
-    # mean_floor = 1e-3  # for div. by 0 errors, need small but not zero
-    # safe_mahalanobis_mean = max(mahalanobis_mean, mean_floor)
+            co_var = np.array([[float(self.std_dev_landmark_x),0],
+                               [0,float(self.std_dev_landmark_y)]])
 
-    # # state variable includes radius w/ x and y
-    # dx = float(detection_mean[0] - stored_mean[0])
-    # dy = float(detection_mean[1] - stored_mean[1])   
+            lm = LandmarkMeasurement(
+                x=float(rx),
+                y=float(ry),
+                covariance=co_var,
+                lm_id=lm_id
+            )
+            measurements.append(lm)
 
-    # J_det = np.array([dx / safe_mahalanobis_mean, dy / safe_mahalanobis_mean])
-    # J_stored = -J_det # Derivative w.r.t stored point is just the negative
-
-    # cov_block = np.block([
-    #     [detection_covariance, np.zeros((2, 2))],
-    #     [np.zeros((2, 2)),     stored_covariance]
-    # ])
-    # J_combined = np.hstack([J_det, J_stored]).reshape(1, 4)
-
-    # covariance_backup = 0.3
-    # mahalanobis_covariance = (J_combined @ cov_block @ J_combined.T).item()
-    # if mahalanobis_covariance == 0:
-    #     safe_mahalanobis_covariance = covariance_backup
-    # else:
-    #     safe_mahalanobis_covariance = mahalanobis_covariance
-    
-    # # print("Detection Mean-->\n",detection_mean)
-    # # print("Detection Covariance-->\n",detection_covariance)
-    # # print("Stored Mean-->\n", stored_mean)
-    # # print("Stored Covariance-->\n", stored_covariance)
-    # # print("safe_mahalanobis_mean-->\n",safe_mahalanobis_mean)
-    # # print("safe_mahalandobis_covariance-->\n", safe_mahalanobis_covariance)
-
-    # return safe_mahalanobis_mean, safe_mahalanobis_covariance
+        return measurements
