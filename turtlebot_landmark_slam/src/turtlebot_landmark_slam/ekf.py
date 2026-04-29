@@ -37,6 +37,7 @@ class ExtendedKalmanFilter(object):
         )
 
         self.innovation_ceiling = 0.1
+        self.std_dev_trip = 0.75
 
         self._tracked_landmarks = []
 
@@ -241,6 +242,11 @@ class ExtendedKalmanFilter(object):
         theta = posterior_state_mean[2]
         wrapped = self._wrap_to_minus_pi_pi(theta)
         posterior_state_mean[2] = wrapped
+
+        for v in list(np.diag(posterior_state_covariance[0:3, 0:3])):
+            if np.sqrt(v) > self.std_dev_trip:
+                print("Standard Deviation Trip exceeded; rejecting update...")
+                return 
 
         # Update state
         self._state_vector = np.array(posterior_state_mean, copy=True)

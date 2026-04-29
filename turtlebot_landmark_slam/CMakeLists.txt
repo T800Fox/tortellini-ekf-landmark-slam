@@ -14,6 +14,7 @@ install(PROGRAMS
   scripts/ekf_interface_node.py
   scripts/map_writer.py
   scripts/evaluate_map.py
+  scripts/ekf_telemetry_display_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

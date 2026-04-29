@@ -2,8 +2,10 @@ from threading import Lock
 import numpy as np
 from sys import exit
 from copy import deepcopy
+import pickle
 
 from geometry_msgs.msg import Twist
+from std_msgs.msg import UInt8MultiArray
 
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
@@ -17,6 +19,8 @@ class EkfOrchestrator(object):
         self.real_env = is_real
         self._lock = Lock()
         self._node = node
+
+        self.telem_pub_set = False
 
         self.ignore_over_dist = 1.5
         self.landmark_cap = -1
@@ -59,6 +63,11 @@ class EkfOrchestrator(object):
                 min_arc_angle=np.radians(90)   # np.radians(90)-- cleared out wall false positives
                 )
 
+    def handover_telem_publisher(self, telem_publisher):
+        self.telemetry_publisher_standin = telem_publisher
+
+        self.telem_pub_set = True
+
     def motion_handler(self, control_input: ControlMeasurement):
         with self._lock:
             self._ekf.predict(control_input)
@@ -93,10 +102,24 @@ class EkfOrchestrator(object):
 
             t = self._node.get_clock().now().nanoseconds
             print('t -> ',t)
-            self.u_plotter.plot_system(pose=self._ekf.pose,
-                                       pose_covar=self._ekf.pose_covariance,
-                                       landmarks=self._ekf.tracked_landmarks, 
-                                       t=t)
+
+            telemetry_package = {}
+            telemetry_package['time'] = t
+            telemetry_package['pose'] = self._ekf.pose
+            telemetry_package['pose_covar'] = self._ekf.pose_covariance
+            telemetry_package['landmarks'] = self._ekf.tracked_landmarks
+
+            serialized_telemetry = pickle.dumps(telemetry_package)
+
+            if self.telem_pub_set:
+                telem_msg = UInt8MultiArray()
+                telem_msg.data = list(serialized_telemetry)
+                self.telemetry_publisher_standin.publish(telem_msg)
+
+            # self.u_plotter.plot_system(pose=self._ekf.pose,
+            #                            pose_covar=self._ekf.pose_covariance,
+            #                            landmarks=self._ekf.tracked_landmarks, 
+            #                            t=t)
 
 
 

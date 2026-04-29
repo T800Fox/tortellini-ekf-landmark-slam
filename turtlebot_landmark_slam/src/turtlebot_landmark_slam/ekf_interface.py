@@ -10,6 +10,7 @@ from sensor_msgs.msg import PointCloud, LaserScan
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from geometry_msgs.msg import TwistStamped
+from std_msgs.msg import UInt8MultiArray
 
 from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
 from turtlebot_landmark_slam.types import ControlMeasurement
@@ -81,7 +82,10 @@ class EkfInterface(object):
         ## Publishers ## 
         self.odom_publisher = self._node.create_publisher(Odometry, "~/odom", 1)
         self.map_publisher = self._node.create_publisher(MarkerArray, "~/map", 5)
+        self.telemetry_publisher = self._node.create_publisher(UInt8MultiArray, "~/telemetry", 1)
         # self.publisher_timer = self._node.create_timer(0.3, self.publishTimerCallback)
+
+        self._orchestrator.handover_telem_publisher(self.telemetry_publisher)
 
 
     def _motion_callback(self, msg):
