@@ -15,6 +15,7 @@ Changes made from provided tutorial file...
   stability and robust-nes. See Paper -> (https://arc.aiaa.org/doi/10.2514/1.59935)
 """
 
+
 from copy import deepcopy
 import numpy as np
 
