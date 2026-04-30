@@ -91,8 +91,8 @@ class lidarLandmarkObserver(object):
     def measure_landmarks(self, ekf_pose, 
                           ekf_pose_covariance, 
                           rel_points, 
-                          ekf_landmarks,
-                          img_raw):
+                          ekf_landmarks
+                          ):
 
         # real world lidar can see up to 8m, too much info
         if self.max_landmark_dist is not None:
@@ -103,9 +103,6 @@ class lidarLandmarkObserver(object):
             points = close_rel_points
         else:
             points = rel_points
-
-        cone_boxes, warped_img, mask, debug_img = cone_dect.cone_detect_pipeline(img_raw)
-        
         
         detections = extract_circular_objects(points,
                 distance_threshold=self.circle_distance_threshold,      
