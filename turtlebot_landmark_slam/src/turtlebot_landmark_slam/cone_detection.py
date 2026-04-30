@@ -43,11 +43,11 @@ class ConeDetection():
                 # vertical separation
                 gap = abs(y2-(y1+h1))
 
-                similar_width = abs(w1-w2) < 0.4*max(w1,w2)
+                similar_width = abs(w1-w2) < 0.7*max(w1,w2)
 
                 if (
                     overlap_ratio > 0.6 and
-                    gap < 120 and
+                    gap < 500 and
                     similar_width
                 ):
                     group.append(c2)

@@ -5,6 +5,7 @@ from cv_bridge import CvBridge
 
 import turtlebot_landmark_slam.cone_detection as cd
 import turtlebot_landmark_slam.lidar_project_to_image as lpi
+import turtlebot_landmark_slam.aruco_detection as ad
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
 from turtlebot_landmark_slam.types import LandmarkMeasurement, StoredLandmark
 from turtlebot_landmark_slam.utils import mahalanobis_distance, euclidianDistance, Relative2AbsoluteXY
@@ -39,14 +40,15 @@ class LandMarkPerception():
         # Expected img subcribe from /camera/image_raw
         # Expected lidar subcribe from /laser or /pointcloud2d
         cone_detect = cd.ConeDetection(img) #.debug_image --> ros2 topic
-        lidar_project = lpi.LidarProject(img, lidar)
-        
-
-                # msg = self.br.cv2_to_imgmsg(frame, encoding="bgr8")
-        img_msg = CvBridge().cv2_to_imgmsg(cone_detect.debug_img, encoding="bgr8")
-        self.img_pub.publish(img_msg)
+        lidar_project = lpi.LidarProject(cone_detect.debug_img, lidar)
 
         lidar_projected_img = lidar_project.img
+
+        aruco_detect_img = ad.ArucoDetection(lidar_projected_img).img
+
+        # msg = self.br.cv2_to_imgmsg(frame, encoding="bgr8")
+        img_msg = CvBridge().cv2_to_imgmsg(aruco_detect_img, encoding="bgr8")
+        self.img_pub.publish(img_msg)
         
         r_boxes = [
             box
