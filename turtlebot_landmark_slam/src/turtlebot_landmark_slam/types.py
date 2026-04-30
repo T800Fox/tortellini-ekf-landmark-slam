@@ -6,48 +6,52 @@ class LandmarkMeasurement:
     x: float
     y: float
     covariance: np.array # [2x2]
-
+ 
     lm_id: int = -1
     colour: str = "unknown"
-
+    aruco_id: int = -1  # -1 means "no tag info / not from ArUco observer"
+ 
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
-
+ 
     @property
     def mean(self):
         return np.array([[self.x], [self.y]])
-
+ 
 @dataclass
 class ControlMeasurement:
     dx: float
     dy: float
     dtheta: float
     covariance: np.array # [3x3]
-
+ 
     @property
     def motion_vector(self):
         return np.array([[self.dx], [self.dy], [self.dtheta]], copy=True)
-
+ 
     def __str__(self):
         return f"sx: {self.dx} dy: {self.dy} dtheta: {self.dtheta} cov: {self.covariance}"
-
+ 
 @dataclass
 class StoredLandmark:
     abs_x: float    # x component of abs. landmark coords.
     abs_y: float    # y component of abs. landmark coords.
     covariance: np.array # [2x2]
-
+ 
     innovation_x=0.0
     innovation_y=0.0
-
+ 
     index: int      # index in state variable
     lm_id: int      # name of landmark
     label="NULL"
     
-
+ 
     colour='r'      # plot colour
     radius=0.1      # plot patch radius
-
+ 
+    aruco_id: int = -1  # -1 means "no tag info"; set when the EKF first
+                        # ingests a measurement from ArucoPerception
+ 
     @property
     def mean(self):
         return (self.abs_x, self.abs_y)

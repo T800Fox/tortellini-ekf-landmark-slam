@@ -32,6 +32,8 @@ class EkfInterfaceNode(Node):
                                  pose_covar=ekf_data['pose_covar'],
                                  landmarks=ekf_data['landmarks'],
                                  t=ekf_data['time'])
+        
+        # TODO: add print to terminal for association!!!!!
 
 
 

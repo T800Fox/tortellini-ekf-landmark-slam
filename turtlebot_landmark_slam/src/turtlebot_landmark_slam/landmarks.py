@@ -26,10 +26,13 @@ frame.
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Circle as pltCircle
+import cv2
 
 from turtlebot_landmark_slam.types import LandmarkMeasurement, StoredLandmark
 from turtlebot_landmark_slam.utils import mahalanobis_distance, euclidianDistance, Relative2AbsoluteXY
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
+
+from turtlebot_landmark_slam.lidar_project_to_image import LidarProject
 
 STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
     1: (-1.0, -1.0),  # obstacle_1
@@ -38,7 +41,7 @@ STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
     4: ( 1.0,  1.0),  # obstacle_4
 }
 
-class lidarLandmarkObserver(object):
+class LidarLandmarkObserver(object):
     def __init__(self,
                 show_display,
                 max_landmark_dist=None,
@@ -330,3 +333,4 @@ class SimLandmarkObserver(object):
             measurements.append(lm)
 
         return measurements
+

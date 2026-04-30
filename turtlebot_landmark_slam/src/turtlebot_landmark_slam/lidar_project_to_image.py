@@ -24,7 +24,7 @@ class LidarProject():
         h, w = self.img.shape[:2]
 
         self.new_camera_k, _ = cv2.getOptimalNewCameraMatrix(
-            self.camera_k, self.camera_dist, (w, h), 1, (w, h))
+        self.camera_k, self.camera_dist, (w, h), 1, (w, h))
         self.new_camera_dist = np.zeros((1, 5))
 
         self.img = cv2.undistort(
@@ -50,8 +50,8 @@ class LidarProject():
 
         plt.show()
 
-    def lidar_to_image_projection(self, rel_points, img_shape):
-        h, w = img_shape[:2]
+    def lidar_to_image_projection(self, rel_points, image):
+        h, w = self.img.shape[:2]
         
         pts = rel_points 
         
