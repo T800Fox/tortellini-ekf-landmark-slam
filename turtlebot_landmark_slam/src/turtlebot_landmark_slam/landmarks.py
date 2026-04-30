@@ -30,6 +30,9 @@ from matplotlib.patches import Circle as pltCircle
 from turtlebot_landmark_slam.types import LandmarkMeasurement, StoredLandmark
 from turtlebot_landmark_slam.utils import mahalanobis_distance, euclidianDistance, Relative2AbsoluteXY
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
+import cone_detection as cone_dect
+import lidar_project_to_image as l_proj
+import sign_extraction_detection as sign_dect
 
 STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
     1: (-1.0, -1.0),  # obstacle_1
@@ -88,7 +91,8 @@ class lidarLandmarkObserver(object):
     def measure_landmarks(self, ekf_pose, 
                           ekf_pose_covariance, 
                           rel_points, 
-                          ekf_landmarks):
+                          ekf_landmarks,
+                          img_raw):
 
         # real world lidar can see up to 8m, too much info
         if self.max_landmark_dist is not None:
@@ -100,6 +104,9 @@ class lidarLandmarkObserver(object):
         else:
             points = rel_points
 
+        cone_boxes, warped_img, mask, debug_img = cone_dect.cone_detect_pipeline(img_raw)
+        
+        
         detections = extract_circular_objects(points,
                 distance_threshold=self.circle_distance_threshold,      
                 min_points=self.circle_min_points,
