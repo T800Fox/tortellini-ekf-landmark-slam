@@ -181,6 +181,7 @@ class EkfOrchestrator(object):
                 else:
                     print(f"Could not match camera meas. @ ({c_m.mean}) w/ lidar meas.")
 
+
             # currently has new values that got associated through camera
             measurements += l_existing 
 
