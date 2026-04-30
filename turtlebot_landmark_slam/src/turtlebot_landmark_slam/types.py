@@ -8,12 +8,7 @@ class LandmarkMeasurement:
     covariance: np.array # [2x2]
 
     lm_id: int
-<<<<<<< HEAD
-    
-    label="NULL"
-=======
     color: str = "unknown"
->>>>>>> perception
 
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
