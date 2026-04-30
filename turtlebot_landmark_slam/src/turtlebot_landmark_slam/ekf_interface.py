@@ -6,10 +6,9 @@ from threading import Lock
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import PointCloud, LaserScan
+from sensor_msgs.msg import PointCloud, LaserScan, Image
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
-from geometry_msgs.msg import TwistStamped
 from std_msgs.msg import UInt8MultiArray
 
 from turtlebot_landmark_slam.ekf_orchestrator import EkfOrchestrator
@@ -77,13 +76,18 @@ class EkfInterface(object):
             qos_profile=10
         )
 
-        # TODO: Add camera/image_raw subscription
+        self._image_subscription = self._node.create_subscription(
+            Image,
+            '/camera/image_raw',
+            self._image_callback,
+            qos_profile=10
+        )
 
         ## Publishers ## 
         self.odom_publisher = self._node.create_publisher(Odometry, "~/odom", 1)
         self.map_publisher = self._node.create_publisher(MarkerArray, "~/map", 5)
         self.telemetry_publisher = self._node.create_publisher(UInt8MultiArray, "~/telemetry", 1)
-        # self.publisher_timer = self._node.create_timer(0.3, self.publishTimerCallback)
+        self.visible_landmark_publisher = self._node.create_publisher(Image, '~/visible_landmarks', 1)
 
         self._orchestrator.handover_telem_publisher(self.telemetry_publisher)
 
@@ -161,24 +165,9 @@ class EkfInterface(object):
 
         self._publishLandmarkMap()
 
-        
-        
+    def _image_callback(self, msg):
+        self._orchestrator.image_handler(msg.data)
 
-    def publishTimerCallback(self):
-        """Publish the current EKF state as an Odometry message and a landmark MarkerArray."""
-        print("publish state called...")
-        if self._last_motion_msg_time is None:
-            print("blocked due to no last odom.")
-            return
-
-        self.publishOdometry(
-            self._orchestrator._ekf.pose,
-            self._orchestrator._ekf.pose_covariance)
-
-        self._publishLandmarkMap()
-
-    # def _image_callback(self, msg):
-    #     pass
 
     def publishOdometry(self, pose, pose_covariance):
         msg = Odometry()

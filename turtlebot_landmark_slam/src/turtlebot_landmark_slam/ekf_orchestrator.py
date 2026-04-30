@@ -10,7 +10,6 @@ from std_msgs.msg import UInt8MultiArray
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
 from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, lidarLandmarkObserver
-
 from turtlebot_landmark_slam.uncertainty_plotter import UncertaintyPlotter
 
 class EkfOrchestrator(object):
@@ -20,12 +19,16 @@ class EkfOrchestrator(object):
         self._lock = Lock()
         self._node = node
 
-        self.telem_pub_set = False
+        self.telemetry_publisher_set = False
+        self.visible_landmark_publisher_set = False
 
         self.ignore_over_dist = 1.5
         self.landmark_cap = -1
 
         self.lidar_observer = SimLandmarkObserver()
+
+        self.last_image_data = None
+        self.last_image_nanoseconds = -1
 
         self.seen_landmark_ids = []
 
@@ -63,10 +66,11 @@ class EkfOrchestrator(object):
                 min_arc_angle=np.radians(90)   # np.radians(90)-- cleared out wall false positives
                 )
 
-    def handover_telem_publisher(self, telem_publisher):
-        self.telemetry_publisher_standin = telem_publisher
 
-        self.telem_pub_set = True
+    def image_handler(self, image_data):
+        self.last_image_data = image_data
+        self.last_image_nanoseconds = self._node.get_clock().now().nanoseconds
+        pass
 
     def motion_handler(self, control_input: ControlMeasurement):
         with self._lock:
@@ -82,14 +86,14 @@ class EkfOrchestrator(object):
             if len(stored_landmarks) > self.landmark_cap:
                 raise RuntimeError(f"+{self.landmark_cap} Landmarks, Aborting.")
 
-            print("Collecting Landmark Measurements")
+            print("Collecting Landmark Measurements.")
             # measurements = self.lidar_observer.measure_landmarks()
-            measurements = self.lidar_observer.measure_landmarks(pose,
+            m_lidar = self.lidar_observer.measure_landmarks(pose,
                                                                  pose_covariance, 
                                                                  rel_points, 
                                                                  stored_landmarks)
-            if len(measurements) == 0:
-                print('empty measurements')
+            if len(m_lidar) == 0:
+                print('empty lidar measurements')
                 return
             
             """
@@ -98,7 +102,7 @@ class EkfOrchestrator(object):
             update the label and add to labeled set            
             """
 
-            self._ekf.update(measurements)
+            self._ekf.update(m_lidar)
 
             t = self._node.get_clock().now().nanoseconds
             print('t -> ',t)
@@ -111,17 +115,23 @@ class EkfOrchestrator(object):
 
             serialized_telemetry = pickle.dumps(telemetry_package)
 
-            if self.telem_pub_set:
+            if self.telemetry_publisher_set:
                 telem_msg = UInt8MultiArray()
                 telem_msg.data = list(serialized_telemetry)
-                self.telemetry_publisher_standin.publish(telem_msg)
+                self.telemetry_publisher.publish(telem_msg)
 
             # self.u_plotter.plot_system(pose=self._ekf.pose,
             #                            pose_covar=self._ekf.pose_covariance,
             #                            landmarks=self._ekf.tracked_landmarks, 
             #                            t=t)
 
+    def handover_telem_publisher(self, publisher):
+        self.telemetry_publisher = publisher
+        self.telemetry_publisher_set = True
 
+    def handover_visible_landmark_publisher(self, publisher):
+        self.visible_landmark_publisher = publisher
+        self.visible_landmark_publisher_set = True
 
     
 
