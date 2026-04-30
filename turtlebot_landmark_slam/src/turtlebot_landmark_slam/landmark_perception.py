@@ -5,7 +5,6 @@ from cv_bridge import CvBridge
 
 import turtlebot_landmark_slam.cone_detection as cd
 import turtlebot_landmark_slam.lidar_project_to_image as lpi
-import turtlebot_landmark_slam.aruco_detection as ad
 from turtlebot_landmark_slam.landmarks_circle_detector import extract_circular_objects
 from turtlebot_landmark_slam.types import LandmarkMeasurement, StoredLandmark
 from turtlebot_landmark_slam.utils import mahalanobis_distance, euclidianDistance, Relative2AbsoluteXY
@@ -44,11 +43,17 @@ class LandMarkPerception():
 
         lidar_projected_img = lidar_project.img
 
-        aruco_detect_img = ad.ArucoDetection(lidar_projected_img).img
+        # aruco_detect_img = ad.ArucoDetection(lidar_projected_img).img
 
-        # msg = self.br.cv2_to_imgmsg(frame, encoding="bgr8")
-        img_msg = CvBridge().cv2_to_imgmsg(aruco_detect_img, encoding="bgr8")
-        self.img_pub.publish(img_msg)
+        # img_msg = CvBridge().cv2_to_compressed_imgmsg(lidar_projected_img)
+        # # img_msg = CvBridge().cv2_to_imgmsg(aruco_detect_img, encoding="bgr8")
+        # self.img_pub.publish(img_msg)
+
+        try:
+            img_msg = CvBridge().cv2_to_compressed_imgmsg(lidar_projected_img)
+            self.img_pub.publish(img_msg)
+        except Exception as e:
+            print(f"ArUco -> debug image publish failed: {e}")
         
         r_boxes = [
             box
@@ -160,8 +165,9 @@ class LandMarkPerception():
                     y=d.center[1],
                     covariance=d_xy_covariance, # ignore theta vals
                     lm_id=next_new_id,
-                    colour= colour
+                    colour=colour
                 )
+                measurement_of_initial_landmark.set_colour(colour)
                 landmark_measurements.append(measurement_of_initial_landmark)
 
                 next_new_id += 1
@@ -217,6 +223,7 @@ class LandMarkPerception():
                     lm_id=next_new_id,
                     colour= colour
                 )
+                measurement_of_new_landmark.set_colour(colour)
                 landmark_measurements.append(measurement_of_new_landmark)
                 next_new_id += 1
         

@@ -150,6 +150,7 @@ class ExtendedKalmanFilter(object):
                     index=index,
                     lm_id=landmark_measurement.lm_id
                 )
+                new_stored.set_colour(landmark_measurement.colour)
                 self._tracked_landmarks.append(new_stored)
 
         # only incorperate landmark observations if innovation is reasonable

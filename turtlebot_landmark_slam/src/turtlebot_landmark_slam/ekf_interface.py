@@ -87,7 +87,7 @@ class EkfInterface(object):
         self.odom_publisher = self._node.create_publisher(Odometry, "~/odom", 1)
         self.map_publisher = self._node.create_publisher(MarkerArray, "~/map", 5)
         self.telemetry_publisher = self._node.create_publisher(UInt8MultiArray, "~/telemetry", 1)
-        self.visible_landmark_publisher = self._node.create_publisher(Image, '~/visible_landmarks', 1)
+        self.visible_landmark_publisher = self._node.create_publisher(CompressedImage, '~/visible_landmarks', 1)
 
         self._orchestrator.handover_telem_publisher(self.telemetry_publisher)
         self._orchestrator.handover_visible_landmark_publisher(self.visible_landmark_publisher)

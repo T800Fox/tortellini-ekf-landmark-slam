@@ -43,7 +43,7 @@ STATIC_OBSTACLE_WORLD_POSITIONS: dict[int, tuple[float, float]] = {
 
 class LidarLandmarkObserver(object):
     def __init__(self,
-                show_display,
+                show_display=False,
                 max_landmark_dist=None,
                 max_landmark_count=None,
                 distance_threshold=0.05,        # 0.05
@@ -333,4 +333,3 @@ class SimLandmarkObserver(object):
             measurements.append(lm)
 
         return measurements
-

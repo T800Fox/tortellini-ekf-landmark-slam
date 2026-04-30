@@ -34,12 +34,12 @@ class EkfInterfaceNode(Node):
                                  t=ekf_data['time'])
         
         # TODO: add print to terminal for association!!!!!
-        print("Landmark Identities ->")
+        print("## Landmark Identities ##")
         for l in ekf_data['landmarks']:
             pretty_id = "?"
             if l.aruco_id != -1:
                 pretty_id = l.aruco_id
-            print(f"    {l.mean} : {pretty_id}")
+            print(f"    {l.mean} -> Aruco ID:{pretty_id}, Colour:{l.colour} ")
 
 
 

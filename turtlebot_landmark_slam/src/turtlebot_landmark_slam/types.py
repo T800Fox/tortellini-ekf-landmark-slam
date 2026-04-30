@@ -17,6 +17,9 @@ class LandmarkMeasurement:
     @property
     def mean(self):
         return np.array([[self.x], [self.y]])
+    
+    def set_colour(self, colour):
+        self.colour = colour
  
 @dataclass
 class ControlMeasurement:
@@ -43,10 +46,10 @@ class StoredLandmark:
  
     index: int      # index in state variable
     lm_id: int      # name of landmark
+    colour: str = 'unknown'
+    aruco_id: int = -1
     label="NULL"
     
- 
-    colour='r'      # plot colour
     radius=0.1      # plot patch radius
  
     aruco_id: int = -1  # -1 means "no tag info"; set when the EKF first
@@ -58,6 +61,9 @@ class StoredLandmark:
     
     def __str__(self):
         return f"label: {self.id}, index: {self.index}, coords: ({self.abs_x},{self.abs_y})"
+    
+    def set_colour(self, colour):
+        self.colour = colour
 
 class se2:
     def __init__(self, x: float = None, y: float = None, theta: float = None, data=None):

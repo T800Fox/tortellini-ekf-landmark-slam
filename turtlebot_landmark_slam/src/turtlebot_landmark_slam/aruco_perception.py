@@ -322,7 +322,6 @@ class ArucoPerception(object):
                 y=rel_y,
                 covariance=xy_cov,
                 lm_id=lm_id,
-                colour="aruco",
                 aruco_id=tag_id,
             )
             measurements.append(measurement)
@@ -463,7 +462,7 @@ class ArucoPerception(object):
                     cv2.circle(debug_img, (u, v), 3, colour, 1)
 
         try:
-            img_msg = CvBridge().cv2_to_imgmsg(debug_img, encoding="bgr8")
+            img_msg = CvBridge().cv2_to_compressed_imgmsg(debug_img)
             self.img_pub.publish(img_msg)
         except Exception as e:
             print(f"ArUco -> debug image publish failed: {e}")

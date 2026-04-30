@@ -18,6 +18,8 @@ from turtlebot_landmark_slam.utils import mahalanobis_distance
 
 from turtlebot_landmark_slam.landmark_perception import LandMarkPerception
 
+from turtlebot_landmark_slam.landmark_perception import LandMarkPerception
+
 class EkfOrchestrator(object):
     def __init__(self, node, is_real):
         self._ekf = ExtendedKalmanFilter()
@@ -46,8 +48,8 @@ class EkfOrchestrator(object):
 
         self.landmark_cap = 20
         self.lidar_observer = LidarLandmarkObserver(
-            show_display=False,
-            max_landmark_dist=1.5,
+            show_display=True,
+            max_landmark_dist=1.6,
             max_landmark_count=self.landmark_cap,
             distance_threshold=0.05,    
             min_points=4,
@@ -63,20 +65,6 @@ class EkfOrchestrator(object):
             exit()
 
             
-            # self.lidar_observer = SimLandmarkObserver()
-            # self.landmark_cap = 4
-            # self.lidar_observer = LidarLandmarkObserver(
-            #     show_display=True,
-            #     max_landmark_dist=5,
-            #     max_landmark_count=self.landmark_cap,
-            #     distance_threshold=0.05,        # 0.05
-            #     min_points=4,
-            #     max_radius=0.16,                # 0.2          -- higest reading was 0.18
-            #     min_radius=0.14,                # 0.1          -- lowest reading was 0.11
-            #     max_mse=1.0e-4,                 # 1.0e-4        -- annoying corner case
-            #     min_arc_angle=np.radians(90)   # np.radians(90)-- cleared out wall false positives
-            #     )
-
 
     def image_handler(self, image_data):
         import cv2
@@ -88,18 +76,6 @@ class EkfOrchestrator(object):
         except Exception as e:
             print(f"cv_bridge conversion failed: {e}")
 
-        # cv2.imshow("Tag Detections", self.last_image_data)
-        # cv2.waitKey(1) # Refresh window
-
-        # pose = self._ekf.pose
-        # pose_covariance = self._ekf.pose_covariance
-        # stored_landmarks = self._ekf.tracked_landmarks
-        # rel_points = [0,0]
-        
-        # m_camera = self.aruco_observer.measure_landmarks(ekf_pose=pose,
-        #                                                      ekf_covariance=pose_covariance,
-        #                                                      image=self.last_image_data,
-        #                                                      lidar_points=rel_points)
 
     def motion_handler(self, control_input: ControlMeasurement):
         with self._lock:
@@ -126,18 +102,18 @@ class EkfOrchestrator(object):
                                                             rel_points=rel_points, 
                                                             ekf_landmarks=stored_landmarks)
             
-            # stored_ids = [l_s.lm_id for l_s in stored_landmarks]
-            # l_existing = []
-            # l_new = []
+            stored_ids = [l_s.lm_id for l_s in stored_landmarks]
+            l_existing = []
+            l_new = []
 
-            # for l in m_lidar:
-            #     if l.lm_id in stored_ids:
-            #         l_existing.append(l)
-            #     else:
-            #         l_new.append(l)
+            for l in m_lidar:
+                if l.lm_id in stored_ids:
+                    l_existing.append(l)
+                else:
+                    l_new.append(l)
 
-            # print(f"Got {len(l_new)} new landmarks.")
-            # print(f"Got {len(l_existing)} existing landmarks.")
+            print(f"Got {len(l_new)} new landmarks.")
+            print(f"Got {len(l_existing)} existing landmarks.")
             
             if len(m_lidar) == 0:
                 return
@@ -153,21 +129,28 @@ class EkfOrchestrator(object):
             frame_age = round((self._node.get_clock().now().nanoseconds - self.last_image_nanoseconds)*1e-9, 4)
             print(f"Checking last frame; is {frame_age} seconds old")
 
-            m_camera = ArucoPerception(self.last_image_data,
+            m_camera_aruco = ArucoPerception(self.last_image_data,
                                        rel_points,
                                        pose,
                                        pose_covariance,
                                        stored_landmarks,
                                        self.visible_landmark_publisher,
                                        debugging=False,
-                                       aruco_dict=cv2.aruco.DICT_APRILTAG_16h5).landmark_measurements
+                                       aruco_dict=cv2.aruco.DICT_5X5_50).landmark_measurements
 
-            print(f"Got {len(m_camera)} from frame...")
+            m_camera_colour = LandMarkPerception(img=self.last_image_data,
+                                          lidar=rel_points,
+                                          ekf_pose=pose,
+                                          ekf_pose_covariance=pose_covariance,
+                                          ekf_landmarks=stored_landmarks,
+                                          image_publisher=self.visible_landmark_publisher).landmark_measurement
 
-            for c_m in m_camera:
+            print(f"Got {len(m_camera_colour)} from frame colour...")
+
+            for c_m_c in m_camera_colour:
                 l_closest_dist = 9999999
-                for l_m in m_lidar:
-                    dist = mahalanobis_distance(c_m.mean, c_m.covariance,
+                for l_m in l_new:
+                    dist = mahalanobis_distance(c_m_c.mean, c_m_c.covariance,
                                                 l_m.mean, l_m.covariance)
                     if dist < l_closest_dist:
                         l_closest = l_m
@@ -175,15 +158,31 @@ class EkfOrchestrator(object):
 
                 if l_closest_dist < 9.21:
                     # 99.9% ceritanty @ 2 dof --> transfer data from camera to lidar measurement
-                    l_m.aruco_id = c_m.aruco_id
-
+                    # l_m.aruco_id = c_m.aruco_id
+                    l_m.set_colour(c_m_c.colour)
+                    measurements.append(l_m)
                     
                 else:
-                    print(f"Could not match camera meas. @ ({c_m.mean}) w/ lidar meas.")
+                    print(f"Could not match camera colour meas. @ ({c_m_c.mean}) w/ lidar meas.")
+
+            for c_m_a in m_camera_aruco:
+                l_closest_dist = 9999999
+                for l_m in l_new:
+                    dist = mahalanobis_distance(c_m_a.mean, c_m_a.covariance,
+                                                l_m.mean, l_m.covariance)
+                    if dist < l_closest_dist:
+                        l_closest = l_m
+                        l_closest_dist = dist
+
+                if l_closest_dist < 9.21:
+                    # 99.9% ceritanty @ 2 dof --> transfer data from camera to lidar measurement
+                    l_m.aruco_id = c_m_a.aruco_id
+
+
 
             measurements = m_lidar
             # currently has new values that got associated through camera
-            # measurements += l_existing 
+            measurements += l_existing 
 
             print(f"Feeding {len(measurements)} into ekf update...")
 
@@ -217,7 +216,3 @@ class EkfOrchestrator(object):
     def handover_visible_landmark_publisher(self, publisher):
         self.visible_landmark_publisher = publisher
         self.visible_landmark_publisher_set = True
-
-    
-
-
