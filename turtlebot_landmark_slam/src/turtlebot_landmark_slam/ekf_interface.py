@@ -6,7 +6,7 @@ from threading import Lock
 import rclpy
 from rclpy.node import Node
 
-from sensor_msgs.msg import PointCloud, LaserScan, Image
+from sensor_msgs.msg import PointCloud, LaserScan, CompressedImage, Image
 from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray
 from std_msgs.msg import UInt8MultiArray
@@ -77,8 +77,8 @@ class EkfInterface(object):
         )
 
         self._image_subscription = self._node.create_subscription(
-            Image,
-            '/camera/image_raw',
+            CompressedImage,
+            '/camera/image_raw/compressed',
             self._image_callback,
             qos_profile=10
         )
