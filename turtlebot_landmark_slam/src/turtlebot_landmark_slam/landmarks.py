@@ -112,7 +112,7 @@ class lidarLandmarkObserver(object):
                 polar=self.circle_polar)
         
         if self.show_display:
-            self._updateLiveDisplay(rel_points, detections)
+            self._updateLiveDisplay(points, detections)
 
         
         landmark_measurements = []

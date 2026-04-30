@@ -29,7 +29,7 @@ class EkfInterface(object):
         tue_test_0 -> lin : 0.2, ang : 60
         """
         self.std_dev_linear_vel = float(self._node.declare_parameter("std_dev_linear_vel", 0.2).value) 
-        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (60 * np.pi) / 180).value)
+        self.std_dev_angular_vel = float(self._node.declare_parameter("std_dev_angular_vel", (45 * np.pi) / 180).value)
 
         self._node.get_logger().info(
             f"[DataProvider] std_dev_linear_vel: {self.std_dev_linear_vel}"

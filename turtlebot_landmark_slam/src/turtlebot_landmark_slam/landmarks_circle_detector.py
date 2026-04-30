@@ -64,12 +64,12 @@ def cluster_points(scan_points, distance_threshold):
 def extract_circular_objects(
     scan_points,
     distance_threshold=0.05, # 0.05
-    min_points=4,
+    min_points=5,
     max_radius=0.09,                 # 0.12          -- higest reading was 0.18
     min_radius=0.05,                 # 0.06          -- lowest reading was 0.11
-    max_mse=1.0e-4,                      # 1.0e-4        -- annoying corner case
+    max_mse=1.0e-1,                      # 1.0e-4        -- annoying corner case
     max_aspect_ratio=None,          # None
-    min_arc_angle=np.radians(90),   # np.radians(90)-- cleared out wall false positives
+    min_arc_angle=np.radians(80),   # np.radians(90)-- cleared out wall false positives
     min_center_range=None,
     polar=False,
 ):
@@ -426,7 +426,7 @@ if __name__ == "__main__":
 
             print(
                 f"  Circle {i+1}: range={rng:.3f} m, bearing={np.degrees(bearing):.2f} deg, "
-                f"radius={c.radius:.3f} m, mse={c.mse:.2e} units, span={c.span:.3e}"
+                f"radius={c.radius:.3f} m, mse={c.mse:.2e} units, span={c.span:.3e}, points={len(c.points)}"
             )
 
         ax.legend(loc="upper right")

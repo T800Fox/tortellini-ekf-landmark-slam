@@ -29,24 +29,24 @@ class EkfOrchestrator(object):
 
         self.seen_landmark_ids = []
 
-        self.u_plotter = UncertaintyPlotter(
-            log_file_path='ekf_values_log.txt'
-            )
+        # self.u_plotter = UncertaintyPlotter(
+        #     log_file_path='ekf_values_log.txt'
+        #     )
 
         if self.real_env:
             # print('Not configured for real, exiting')
             # exit()
             self.landmark_cap = 20
             self.lidar_observer = lidarLandmarkObserver(
-                show_display=False,
-                max_landmark_dist=1,
+                show_display=True,
+                max_landmark_dist=2,
                 max_landmark_count=self.landmark_cap,
                 distance_threshold=0.05,    
-                min_points=4,
+                min_points=5,
                 max_radius=0.09,        
-                min_radius=0.005,           
+                min_radius=0.05,           
                 max_mse=1.0e-4,              
-                min_arc_angle=np.radians(90)  
+                min_arc_angle=np.radians(80)  
                 )
         else:
             # self.lidar_observer = SimLandmarkObserver()
