@@ -18,7 +18,7 @@ from sensor_msgs.msg import LaserScan, PointCloud
 
 from turtlebot_landmark_slam.src.turtlebot_landmark_slam.lidar_landmark_observers import cluster_points
 
-COLORS = plt.cm.tab10.colors
+colourS = plt.cm.tab10.colors
 
 
 def draw(ax, scan_points, clusters, threshold):
@@ -33,8 +33,8 @@ def draw(ax, scan_points, clusters, threshold):
     ax.plot(scan_points[:, 1], scan_points[:, 0], ".", color="lightgray", markersize=3, zorder=1)
 
     for i, c in enumerate(clusters):
-        color = COLORS[i % len(COLORS)]
-        ax.plot(c[:, 1], c[:, 0], ".", color=color, markersize=6, zorder=2)
+        colour = colourS[i % len(colourS)]
+        ax.plot(c[:, 1], c[:, 0], ".", color=colour, markersize=6, zorder=2)
 
     ax.plot(0, 0, "^", color="black", markersize=10, zorder=5)
 

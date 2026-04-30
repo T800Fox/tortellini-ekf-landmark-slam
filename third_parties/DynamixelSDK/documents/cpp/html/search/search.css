@@ -13,7 +13,7 @@
     right: 0px;
     width: 170px;
     z-index: 102;
-    background-color: white;
+    background-colour: white;
 }
 
 #MSearchBox .left
@@ -51,7 +51,7 @@
     width:111px;
     margin-left:20px;
     padding-left:4px;
-    color: #909090;
+    colour: #909090;
     outline: none;
     font: 9pt Arial, Verdana, sans-serif;
 }
@@ -91,7 +91,7 @@
 }
 
 .MSearchBoxActive #MSearchField {
-    color: #000000;
+    colour: #000000;
 }
 
 /*---------------- Search filter selection */
@@ -101,7 +101,7 @@
     position: absolute;
     left: 0; top: 0;
     border: 1px solid #90A5CE;
-    background-color: #F9FAFC;
+    background-colour: #F9FAFC;
     z-index: 1;
     padding-top: 4px;
     padding-bottom: 4px;
@@ -130,7 +130,7 @@ span.SelectionMark {
 a.SelectItem {
     display: block;
     outline-style: none;
-    color: #000000; 
+    colour: #000000; 
     text-decoration: none;
     padding-left:   6px;
     padding-right: 12px;
@@ -138,14 +138,14 @@ a.SelectItem {
 
 a.SelectItem:focus,
 a.SelectItem:active {
-    color: #000000; 
+    colour: #000000; 
     outline-style: none;
     text-decoration: none;
 }
 
 a.SelectItem:hover {
-    color: #FFFFFF;
-    background-color: #3D578C;
+    colour: #FFFFFF;
+    background-colour: #3D578C;
     outline-style: none;
     text-decoration: none;
     cursor: pointer;
@@ -164,7 +164,7 @@ iframe#MSearchResults {
     position: absolute;
     left: 0; top: 0;
     border: 1px solid #000;
-    background-color: #EEF1F7;
+    background-colour: #EEF1F7;
 }
 
 /* ----------------------------------- */
@@ -199,7 +199,7 @@ body.SRPage {
 
 .SRSymbol {
     font-weight: bold; 
-    color: #425E97;
+    colour: #425E97;
     font-family: Arial, Verdana, sans-serif;
     text-decoration: none;
     outline: none;
@@ -207,7 +207,7 @@ body.SRPage {
 
 a.SRScope {
     display: block;
-    color: #425E97; 
+    colour: #425E97; 
     font-family: Arial, Verdana, sans-serif;
     text-decoration: none;
     outline: none;
@@ -240,11 +240,11 @@ DIV.searchresults {
 /*---------------- External search page results */
 
 .searchresult {
-    background-color: #F0F3F8;
+    background-colour: #F0F3F8;
 }
 
 .pages b {
-   color: white;
+   colour: white;
    padding: 5px 5px 3px 5px;
    background-image: url("../tab_a.png");
    background-repeat: repeat-x;

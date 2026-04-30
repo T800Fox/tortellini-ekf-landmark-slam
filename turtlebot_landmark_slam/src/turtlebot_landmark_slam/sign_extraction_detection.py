@@ -1,4 +1,4 @@
-import cone_detection as cd
+import turtlebot_landmark_slam.cone_detection as cd
 import cv2
 import numpy as np
 
@@ -82,7 +82,7 @@ def sign_detection_extraction(frame: cv2.Mat):
     edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
     edges = cv2.dilate(edges, kernel, iterations=1)
 
-    # Convert edges to BGR so we can draw colored boxes
+    # Convert edges to BGR so we can draw coloured boxes
     edges_with_boxes = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
 
     # Find contours
@@ -181,15 +181,15 @@ def filter_outofframe_boxes(org_img: cv2.Mat, boxes: list, warped: list) -> tupl
         
     return valid_boxes, valid_warped
 
-def color_sign_filter(contours: list, signs: list) -> tuple[list, list]:
+def colour_sign_filter(contours: list, signs: list) -> tuple[list, list]:
     valid_contours = []
     valid_signs = []
     
     for box, sign in zip(contours, signs):
-        # Convert to HSV color space for better color filtering
+        # Convert to HSV colour space for better colour filtering
         hsv = cv2.cvtColor(sign, cv2.COLOR_BGR2HSV)
 
-        # Define color range for blue
+        # Define colour range for blue
         minBlue = np.array([105, 70, 20])
         maxBlue = np.array([125, 255, 255])
         maskblue = cv2.inRange(hsv, minBlue, maxBlue)
@@ -215,12 +215,12 @@ def sign_pipeline(img: cv2.Mat, edge_detect: cv2.Mat, contours: list, signs: lis
     contours, signs = filter_outofframe_boxes(img, contours, signs)
     contours, signs = square_contour_filter(contours, signs)
     contours, signs = small_contour_filter(img, contours, signs, 0.02)
-    #contours, signs = color_sign_filter(contours, signs)
+    #contours, signs = colour_sign_filter(contours, signs)
     
     # At this point we should have: 
     # - remove small contours that are unlikely to be traffic signs
     # - remove non-square contours that are unlikely to be traffic signs
     # - remove contours that are outside the image frame
-    # - remove contours that do not have enough blue color (as we are looking for blue signs)
+    # - remove contours that do not have enough blue colour (as we are looking for blue signs)
 
     return contours, signs

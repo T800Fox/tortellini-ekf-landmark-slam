@@ -809,7 +809,7 @@
         <material id="ID59" name="material_4">
             <instance_effect url="#ID60" />
         </material>
-        <material id="ID109" name="edge_color6291111255">
+        <material id="ID109" name="edge_colour6291111255">
             <instance_effect url="#ID110" />
         </material>
     </library_materials>
@@ -819,7 +819,7 @@
                 <technique sid="COMMON">
                     <lambert>
                         <diffuse>
-                            <color>0.1254901960784314 0.2117647058823529 0.2274509803921569 1</color>
+                            <colour>0.1254901960784314 0.2117647058823529 0.2274509803921569 1</colour>
                         </diffuse>
                     </lambert>
                 </technique>
@@ -830,7 +830,7 @@
                 <technique sid="COMMON">
                     <lambert>
                         <diffuse>
-                            <color>0.2431372549019608 0.3568627450980392 0.4352941176470588 1</color>
+                            <colour>0.2431372549019608 0.3568627450980392 0.4352941176470588 1</colour>
                         </diffuse>
                     </lambert>
                 </technique>
@@ -841,7 +841,7 @@
                 <technique sid="COMMON">
                     <lambert>
                         <diffuse>
-                            <color>0.6627450980392157 0.6627450980392157 0.6627450980392157 1</color>
+                            <colour>0.6627450980392157 0.6627450980392157 0.6627450980392157 1</colour>
                         </diffuse>
                     </lambert>
                 </technique>
@@ -852,7 +852,7 @@
                 <technique sid="COMMON">
                     <lambert>
                         <diffuse>
-                            <color>0 0 0 1</color>
+                            <colour>0 0 0 1</colour>
                         </diffuse>
                     </lambert>
                 </technique>
@@ -863,7 +863,7 @@
                 <technique sid="COMMON">
                     <lambert>
                         <diffuse>
-                            <color>0.2156862745098039 0.3568627450980392 0.3843137254901961 1</color>
+                            <colour>0.2156862745098039 0.3568627450980392 0.3843137254901961 1</colour>
                         </diffuse>
                     </lambert>
                 </technique>
@@ -874,7 +874,7 @@
                 <technique sid="COMMON">
                     <constant>
                         <transparent opaque="A_ONE">
-                            <color>0.2431372549019608 0.3568627450980392 0.4352941176470588 1</color>
+                            <colour>0.2431372549019608 0.3568627450980392 0.4352941176470588 1</colour>
                         </transparent>
                         <transparency>
                             <float>1</float>

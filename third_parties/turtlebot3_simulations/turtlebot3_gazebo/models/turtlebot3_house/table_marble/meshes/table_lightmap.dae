@@ -52,16 +52,16 @@
         <technique sid="common">
           <phong>
             <emission>
-              <color sid="emission">0 0 0 1</color>
+              <colour sid="emission">0 0 0 1</colour>
             </emission>
             <ambient>
-              <color sid="ambient">0 0 0 1</color>
+              <colour sid="ambient">0 0 0 1</colour>
             </ambient>
             <diffuse>
               <texture texture="table_lightmap-sampler" texcoord="UVMap"/>
             </diffuse>
             <specular>
-              <color sid="specular">0.2397164 0.2130976 0.1375283 1</color>
+              <colour sid="specular">0.2397164 0.2130976 0.1375283 1</colour>
             </specular>
             <shininess>
               <float sid="shininess">323</float>

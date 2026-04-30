@@ -19,7 +19,7 @@ h1.groupheader {
 
 h2.groupheader {
 	border-bottom: 1px solid #879ECB;
-	color: #354C7B;
+	colour: #354C7B;
 	font-size: 150%;
 	font-weight: normal;
 	margin-top: 1.75em;
@@ -93,7 +93,7 @@ h3.version {
 }
 
 div.qindex, div.navtab{
-	background-color: #EBEFF6;
+	background-colour: #EBEFF6;
 	border: 1px solid #A3B4D7;
 	text-align: center;
 }
@@ -110,13 +110,13 @@ div.navtab {
 /* @group Link Styling */
 
 a {
-	color: #3D578C;
+	colour: #3D578C;
 	font-weight: normal;
 	text-decoration: none;
 }
 
 .contents a:visited {
-	color: #4665A2;
+	colour: #4665A2;
 }
 
 a:hover {
@@ -129,13 +129,13 @@ a.qindex {
 
 a.qindexHL {
 	font-weight: bold;
-	background-color: #9CAFD4;
-	color: #ffffff;
+	background-colour: #9CAFD4;
+	colour: #ffffff;
 	border: 1px double #869DCA;
 }
 
 .contents a.qindexHL:visited {
-        color: #ffffff;
+        colour: #ffffff;
 }
 
 a.el {
@@ -146,11 +146,11 @@ a.elRef {
 }
 
 a.code, a.code:visited, a.line, a.line:visited {
-	color: #4665A2; 
+	colour: #4665A2; 
 }
 
 a.codeRef, a.codeRef:visited, a.lineRef, a.lineRef:visited {
-	color: #4665A2; 
+	colour: #4665A2; 
 }
 
 /* @end */
@@ -161,7 +161,7 @@ dl.el {
 
 pre.fragment {
         border: 1px solid #C4CFE5;
-        background-color: #FBFCFD;
+        background-colour: #FBFCFD;
         padding: 4px 6px;
         margin: 4px 8px 4px 2px;
         overflow: auto;
@@ -175,7 +175,7 @@ pre.fragment {
 div.fragment {
         padding: 4px 6px;
         margin: 4px 8px 4px 2px;
-	background-color: #FBFCFD;
+	background-colour: #FBFCFD;
 	border: 1px solid #C4CFE5;
 }
 
@@ -194,15 +194,15 @@ div.line {
 	padding-left: 53px;
 	padding-bottom: 0px;
 	margin: 0px;
-	-webkit-transition-property: background-color, box-shadow;
+	-webkit-transition-property: background-colour, box-shadow;
 	-webkit-transition-duration: 0.5s;
-	-moz-transition-property: background-color, box-shadow;
+	-moz-transition-property: background-colour, box-shadow;
 	-moz-transition-duration: 0.5s;
-	-ms-transition-property: background-color, box-shadow;
+	-ms-transition-property: background-colour, box-shadow;
 	-ms-transition-duration: 0.5s;
-	-o-transition-property: background-color, box-shadow;
+	-o-transition-property: background-colour, box-shadow;
 	-o-transition-duration: 0.5s;
-	transition-property: background-color, box-shadow;
+	transition-property: background-colour, box-shadow;
 	transition-duration: 0.5s;
 }
 
@@ -212,7 +212,7 @@ div.line:after {
 }
 
 div.line.glow {
-	background-color: cyan;
+	background-colour: cyan;
 	box-shadow: 0 0 10px cyan;
 }
 
@@ -221,21 +221,21 @@ span.lineno {
 	padding-right: 4px;
 	text-align: right;
 	border-right: 2px solid #0F0;
-	background-color: #E8E8E8;
+	background-colour: #E8E8E8;
         white-space: pre;
 }
 span.lineno a {
-	background-color: #D8D8D8;
+	background-colour: #D8D8D8;
 }
 
 span.lineno a:hover {
-	background-color: #C8C8C8;
+	background-colour: #C8C8C8;
 }
 
 div.ah, span.ah {
-	background-color: black;
+	background-colour: black;
 	font-weight: bold;
-	color: #ffffff;
+	colour: #ffffff;
 	margin-bottom: 3px;
 	margin-top: 3px;
 	padding: 0.2em;
@@ -246,7 +246,7 @@ div.ah, span.ah {
 	box-shadow: 2px 2px 3px #999;
 	-webkit-box-shadow: 2px 2px 3px #999;
 	-moz-box-shadow: rgba(0, 0, 0, 0.15) 2px 2px 2px;
-	background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),color-stop(0.3, #444));
+	background-image: -webkit-gradient(linear, left top, left bottom, from(#eee), to(#000),colour-stop(0.3, #444));
 	background-image: -moz-linear-gradient(center top, #eee 0%, #444 40%, #000 110%);
 }
 
@@ -271,8 +271,8 @@ div.groupText {
 }
 
 body {
-	background-color: white;
-	color: black;
+	background-colour: white;
+	colour: black;
         margin: 0;
 }
 
@@ -283,7 +283,7 @@ div.contents {
 }
 
 td.indexkey {
-	background-color: #EBEFF6;
+	background-colour: #EBEFF6;
 	font-weight: bold;
 	border: 1px solid #C4CFE5;
 	margin: 2px 0px 2px 0;
@@ -293,14 +293,14 @@ td.indexkey {
 }
 
 td.indexvalue {
-	background-color: #EBEFF6;
+	background-colour: #EBEFF6;
 	border: 1px solid #C4CFE5;
 	padding: 2px 10px;
 	margin: 2px 0px;
 }
 
 tr.memlist {
-	background-color: #EEF1F7;
+	background-colour: #EEF1F7;
 }
 
 p.formulaDsp {
@@ -336,54 +336,54 @@ img.footer {
 	vertical-align: middle;
 }
 
-/* @group Code Colorization */
+/* @group Code colourization */
 
 span.keyword {
-	color: #008000
+	colour: #008000
 }
 
 span.keywordtype {
-	color: #604020
+	colour: #604020
 }
 
 span.keywordflow {
-	color: #e08000
+	colour: #e08000
 }
 
 span.comment {
-	color: #800000
+	colour: #800000
 }
 
 span.preprocessor {
-	color: #806020
+	colour: #806020
 }
 
 span.stringliteral {
-	color: #002080
+	colour: #002080
 }
 
 span.charliteral {
-	color: #008080
+	colour: #008080
 }
 
 span.vhdldigit { 
-	color: #ff00ff 
+	colour: #ff00ff 
 }
 
 span.vhdlchar { 
-	color: #000000 
+	colour: #000000 
 }
 
 span.vhdlkeyword { 
-	color: #700070 
+	colour: #700070 
 }
 
 span.vhdllogic { 
-	color: #ff0000 
+	colour: #ff0000 
 }
 
 blockquote {
-        background-color: #F7F8FB;
+        background-colour: #F7F8FB;
         border-left: 2px solid #9CAFD4;
         margin: 0 24px 0 4px;
         padding: 0 12px 0 16px;
@@ -393,7 +393,7 @@ blockquote {
 
 /*
 .search {
-	color: #003399;
+	colour: #003399;
 	font-weight: bold;
 }
 
@@ -404,9 +404,9 @@ form.search {
 
 input.search {
 	font-size: 75%;
-	color: #000080;
+	colour: #000080;
 	font-weight: normal;
-	background-color: #e8eef2;
+	background-colour: #e8eef2;
 }
 */
 
@@ -443,27 +443,27 @@ table.memberdecls {
 }
 
 .memberdecls td, .fieldtable tr {
-	-webkit-transition-property: background-color, box-shadow;
+	-webkit-transition-property: background-colour, box-shadow;
 	-webkit-transition-duration: 0.5s;
-	-moz-transition-property: background-color, box-shadow;
+	-moz-transition-property: background-colour, box-shadow;
 	-moz-transition-duration: 0.5s;
-	-ms-transition-property: background-color, box-shadow;
+	-ms-transition-property: background-colour, box-shadow;
 	-ms-transition-duration: 0.5s;
-	-o-transition-property: background-color, box-shadow;
+	-o-transition-property: background-colour, box-shadow;
 	-o-transition-duration: 0.5s;
-	transition-property: background-color, box-shadow;
+	transition-property: background-colour, box-shadow;
 	transition-duration: 0.5s;
 }
 
 .memberdecls td.glow, .fieldtable tr.glow {
-	background-color: cyan;
+	background-colour: cyan;
 	box-shadow: 0 0 15px cyan;
 }
 
 .mdescLeft, .mdescRight,
 .memItemLeft, .memItemRight,
 .memTemplItemLeft, .memTemplItemRight, .memTemplParams {
-	background-color: #F9FAFC;
+	background-colour: #F9FAFC;
 	border: none;
 	margin: 4px;
 	padding: 1px 0 0 8px;
@@ -471,7 +471,7 @@ table.memberdecls {
 
 .mdescLeft, .mdescRight {
 	padding: 0px 8px 4px 8px;
-	color: #555;
+	colour: #555;
 }
 
 .memSeparator {
@@ -490,7 +490,7 @@ table.memberdecls {
 }
 
 .memTemplParams {
-	color: #4665A2;
+	colour: #4665A2;
         white-space: nowrap;
 	font-size: 80%;
 }
@@ -503,13 +503,13 @@ table.memberdecls {
 
 .memtemplate {
 	font-size: 80%;
-	color: #4665A2;
+	colour: #4665A2;
 	font-weight: normal;
 	margin-left: 9px;
 }
 
 .memnav {
-	background-color: #EBEFF6;
+	background-colour: #EBEFF6;
 	border: 1px solid #A3B4D7;
 	text-align: center;
 	margin: 2px;
@@ -552,12 +552,12 @@ table.memberdecls {
         border-left: 1px solid #A8B8D9;
         border-right: 1px solid #A8B8D9;
         padding: 6px 0px 6px 0px;
-        color: #253555;
+        colour: #253555;
         font-weight: bold;
         text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
         background-image:url('nav_f.png');
         background-repeat:repeat-x;
-        background-color: #E2E8F2;
+        background-colour: #E2E8F2;
         /* opera specific markup */
         box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.15);
         border-top-right-radius: 4px;
@@ -578,11 +578,11 @@ table.memberdecls {
         border-left: 1px solid #A8B8D9;      
         border-right: 1px solid #A8B8D9; 
         padding: 6px 10px 2px 10px;
-        background-color: #FBFCFD;
+        background-colour: #FBFCFD;
         border-top-width: 0;
         background-image:url('nav_g.png');
         background-repeat:repeat-x;
-        background-color: #FFFFFF;
+        background-colour: #FFFFFF;
         /* opera specific markup */
         border-bottom-left-radius: 4px;
         border-bottom-right-radius: 4px;
@@ -615,7 +615,7 @@ dl.reflist dd {
 }
 
 .paramname {
-	color: #602020;
+	colour: #602020;
 	white-space: nowrap;
 }
 .paramname em {
@@ -665,13 +665,13 @@ span.mlabels {
 }
 
 span.mlabel {
-        background-color: #728DC1;
+        background-colour: #728DC1;
         border-top:1px solid #5373B4;
         border-left:1px solid #5373B4;
         border-right:1px solid #C4CFE5;
         border-bottom:1px solid #C4CFE5;
 	text-shadow: none;
-	color: white;
+	colour: white;
 	margin-right: 4px;
 	padding: 2px 3px;
 	border-radius: 3px;
@@ -727,7 +727,7 @@ div.directory {
 
 .directory tr.even {
 	padding-left: 6px;
-	background-color: #F7F8FB;
+	background-colour: #F7F8FB;
 }
 
 .directory img {
@@ -745,11 +745,11 @@ div.directory {
         cursor: pointer;
         padding-left: 2px;
         padding-right: 2px;
-	color: #3D578C;
+	colour: #3D578C;
 }
 
 .arrow {
-    color: #9CAFD4;
+    colour: #9CAFD4;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
@@ -769,8 +769,8 @@ div.directory {
     height: 14px;
     width: 16px;
     display: inline-block;
-    background-color: #728DC1;
-    color: white;
+    background-colour: #728DC1;
+    colour: white;
     text-align: center;
     border-radius: 4px;
     margin-left: 2px;
@@ -834,7 +834,7 @@ div.dynheader {
 
 address {
 	font-style: normal;
-	color: #2A3D61;
+	colour: #2A3D61;
 }
 
 table.doxtable caption {
@@ -853,8 +853,8 @@ table.doxtable td, table.doxtable th {
 }
 
 table.doxtable th {
-	background-color: #374F7F;
-	color: #FFFFFF;
+	background-colour: #374F7F;
+	colour: #FFFFFF;
 	font-size: 110%;
 	padding-bottom: 4px;
 	padding-top: 5px;
@@ -908,9 +908,9 @@ table.fieldtable {
 .fieldtable th {
         background-image:url('nav_f.png');
         background-repeat:repeat-x;
-        background-color: #E2E8F2;
+        background-colour: #E2E8F2;
         font-size: 90%;
-        color: #253555;
+        colour: #253555;
         padding-bottom: 4px;
         padding-top: 5px;
         text-align:left;
@@ -942,7 +942,7 @@ table.fieldtable {
 	background-position: 0 -5px;
 	height:30px;
 	line-height:30px;
-	color:#8AA0CC;
+	colour:#8AA0CC;
 	border:solid 1px #C2CDE4;
 	overflow:hidden;
 	margin:0px;
@@ -958,7 +958,7 @@ table.fieldtable {
 	background-image:url('bc_s.png');
 	background-repeat:no-repeat;
 	background-position:right;
-	color:#364D7C;
+	colour:#364D7C;
 }
 
 .navpath li.navelem a
@@ -967,7 +967,7 @@ table.fieldtable {
 	display:block;
 	text-decoration: none;
 	outline: none;
-	color: #283A5D;
+	colour: #283A5D;
 	font-family: 'Lucida Grande',Geneva,Helvetica,Arial,sans-serif;
 	text-shadow: 0px 1px 1px rgba(255, 255, 255, 0.9);
 	text-decoration: none;        
@@ -975,7 +975,7 @@ table.fieldtable {
 
 .navpath li.navelem a:hover
 {
-	color:#6884BD;
+	colour:#6884BD;
 }
 
 .navpath li.footer
@@ -987,7 +987,7 @@ table.fieldtable {
         background-image:none;
         background-repeat:no-repeat;
         background-position:right;
-        color:#364D7C;
+        colour:#364D7C;
         font-size: 8pt;
 }
 
@@ -1034,7 +1034,7 @@ div.header
 {
         background-image:url('nav_h.png');
         background-repeat:repeat-x;
-	background-color: #F9FAFC;
+	background-colour: #F9FAFC;
 	margin:  0px;
 	border-bottom: 1px solid #C4CFE5;
 }
@@ -1061,7 +1061,7 @@ dl.note
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #D0C000;
+        border-colour: #D0C000;
 }
 
 dl.warning, dl.attention
@@ -1069,7 +1069,7 @@ dl.warning, dl.attention
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #FF0000;
+        border-colour: #FF0000;
 }
 
 dl.pre, dl.post, dl.invariant
@@ -1077,7 +1077,7 @@ dl.pre, dl.post, dl.invariant
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #00D000;
+        border-colour: #00D000;
 }
 
 dl.deprecated
@@ -1085,7 +1085,7 @@ dl.deprecated
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #505050;
+        border-colour: #505050;
 }
 
 dl.todo
@@ -1093,7 +1093,7 @@ dl.todo
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #00C0E0;
+        border-colour: #00C0E0;
 }
 
 dl.test
@@ -1101,7 +1101,7 @@ dl.test
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #3030E0;
+        border-colour: #3030E0;
 }
 
 dl.bug
@@ -1109,7 +1109,7 @@ dl.bug
         margin-left:-7px;
         padding-left: 3px;
         border-left:4px solid;
-        border-color: #C08050;
+        border-colour: #C08050;
 }
 
 dl.section dd {
@@ -1198,7 +1198,7 @@ dl.citelist {
 }
 
 dl.citelist dt {
-        color:#334975;
+        colour:#334975;
         float:left;
         font-weight:bold;
         margin-right:10px;
@@ -1212,7 +1212,7 @@ dl.citelist dd {
 
 div.toc {
         padding: 14px 25px;
-        background-color: #F4F6FA;
+        background-colour: #F4F6FA;
         border: 1px solid #D8DFEE;
         border-radius: 7px 7px 7px 7px;
         float: right;
@@ -1231,7 +1231,7 @@ div.toc li {
 
 div.toc h3 {
         font: bold 12px/1.2 Arial,FreeSans,sans-serif;
-	color: #4665A2;
+	colour: #4665A2;
         border-bottom: 0 none;
         margin: 0;
 }
@@ -1260,7 +1260,7 @@ div.toc li.level4 {
 
 .inherit_header {
         font-weight: bold;
-        color: gray;
+        colour: gray;
         cursor: pointer;
 	-webkit-touch-callout: none;
 	-webkit-user-select: none;
@@ -1293,7 +1293,7 @@ tr.heading h2 {
 #powerTip {
 	cursor: default;
 	white-space: nowrap;
-	background-color: white;
+	background-colour: white;
 	border: 1px solid gray;
 	border-radius: 4px 4px 4px 4px;
 	box-shadow: 1px 1px 7px gray;
@@ -1307,7 +1307,7 @@ tr.heading h2 {
 }
 
 #powerTip div.ttdoc {
-        color: grey;
+        colour: grey;
 	font-style: italic;
 }
 
@@ -1320,7 +1320,7 @@ tr.heading h2 {
 }
 
 #powerTip div.ttdeci {
-        color: #006318;
+        colour: #006318;
 }
 
 #powerTip div {
@@ -1354,14 +1354,14 @@ tr.heading h2 {
 #powerTip.w:after,  #powerTip.e:after,
 #powerTip.nw:after, #powerTip.ne:after,
 #powerTip.sw:after, #powerTip.se:after {
-	border-color: rgba(255, 255, 255, 0);
+	border-colour: rgba(255, 255, 255, 0);
 }
 
 #powerTip.n:before,  #powerTip.s:before,
 #powerTip.w:before,  #powerTip.e:before,
 #powerTip.nw:before, #powerTip.ne:before,
 #powerTip.sw:before, #powerTip.se:before {
-	border-color: rgba(128, 128, 128, 0);
+	border-colour: rgba(128, 128, 128, 0);
 }
 
 #powerTip.n:after,  #powerTip.n:before,
@@ -1371,12 +1371,12 @@ tr.heading h2 {
 }
 
 #powerTip.n:after, #powerTip.ne:after, #powerTip.nw:after {
-	border-top-color: #ffffff;
+	border-top-colour: #ffffff;
 	border-width: 10px;
 	margin: 0px -10px;
 }
 #powerTip.n:before {
-	border-top-color: #808080;
+	border-top-colour: #808080;
 	border-width: 11px;
 	margin: 0px -11px;
 }
@@ -1399,13 +1399,13 @@ tr.heading h2 {
 }
 
 #powerTip.s:after, #powerTip.se:after, #powerTip.sw:after {
-	border-bottom-color: #ffffff;
+	border-bottom-colour: #ffffff;
 	border-width: 10px;
 	margin: 0px -10px;
 }
 
 #powerTip.s:before, #powerTip.se:before, #powerTip.sw:before {
-	border-bottom-color: #808080;
+	border-bottom-colour: #808080;
 	border-width: 11px;
 	margin: 0px -11px;
 }
@@ -1426,13 +1426,13 @@ tr.heading h2 {
 	left: 100%;
 }
 #powerTip.e:after {
-	border-left-color: #ffffff;
+	border-left-colour: #ffffff;
 	border-width: 10px;
 	top: 50%;
 	margin-top: -10px;
 }
 #powerTip.e:before {
-	border-left-color: #808080;
+	border-left-colour: #808080;
 	border-width: 11px;
 	top: 50%;
 	margin-top: -11px;
@@ -1442,13 +1442,13 @@ tr.heading h2 {
 	right: 100%;
 }
 #powerTip.w:after {
-	border-right-color: #ffffff;
+	border-right-colour: #ffffff;
 	border-width: 10px;
 	top: 50%;
 	margin-top: -10px;
 }
 #powerTip.w:before {
-	border-right-color: #808080;
+	border-right-colour: #808080;
 	border-width: 11px;
 	top: 50%;
 	margin-top: -11px;

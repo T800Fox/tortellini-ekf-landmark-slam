@@ -305,7 +305,7 @@ class TrafficSignProcessor:
                 # Data augmentation ADD MORE HERE
                 transforms.RandomRotation(degrees=15),                      # Randomly rotate by up to ±15 degrees
                 transforms.RandomAffine(degrees=0, translate=(0.1, 0.1)),   # Random translation
-                transforms.ColorJitter(brightness=0.15, contrast=0.15, saturation= 0.1),       # Random brightness/contrast changes
+                transforms.colourJitter(brightness=0.15, contrast=0.15, saturation= 0.1),       # Random brightness/contrast changes
                 transforms.RandomPerspective(distortion_scale=0.2, p=0.5),  # Random perspective distortion
                 transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 1.0)),
              

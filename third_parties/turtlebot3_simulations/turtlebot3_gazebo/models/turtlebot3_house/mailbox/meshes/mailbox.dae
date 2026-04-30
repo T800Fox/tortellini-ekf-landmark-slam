@@ -17,25 +17,25 @@
         <technique sid="common">
           <blinn>
             <emission>
-              <color>0 0 0 1</color>
+              <colour>0 0 0 1</colour>
             </emission>
             <ambient>
-              <color>1 1 1 1</color>
+              <colour>1 1 1 1</colour>
             </ambient>
             <diffuse>
-              <color>1 1 1 1</color>
+              <colour>1 1 1 1</colour>
             </diffuse>
             <specular>
-              <color>0.9 0.9 0.9 1</color>
+              <colour>0.9 0.9 0.9 1</colour>
             </specular>
             <shininess>
               <float>9.999999</float>
             </shininess>
             <reflective>
-              <color>0 0 0 1</color>
+              <colour>0 0 0 1</colour>
             </reflective>
             <transparent opaque="A_ONE">
-              <color>1 1 1 1</color>
+              <colour>1 1 1 1</colour>
             </transparent>
             <transparency>
               <float>1</float>
@@ -60,7 +60,7 @@
             <ambient_diffuse_texture_lock>1</ambient_diffuse_texture_lock>
             <diffuse_specular_lock>0</diffuse_specular_lock>
             <soften>0.1</soften>
-            <use_self_illum_color>0</use_self_illum_color>
+            <use_self_illum_colour>0</use_self_illum_colour>
           </shader>
         </technique>
       </extra>
@@ -120,7 +120,7 @@
     <light id="EnvironmentAmbientLight" name="EnvironmentAmbientLight">
       <technique_common>
         <ambient>
-          <color>0 0 0</color>
+          <colour>0 0 0</colour>
         </ambient>
       </technique_common>
     </light>

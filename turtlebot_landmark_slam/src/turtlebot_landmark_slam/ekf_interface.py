@@ -90,7 +90,7 @@ class EkfInterface(object):
         self.visible_landmark_publisher = self._node.create_publisher(Image, '~/visible_landmarks', 1)
 
         self._orchestrator.handover_telem_publisher(self.telemetry_publisher)
-
+        self._orchestrator.handover_visible_landmark_publisher(self.visible_landmark_publisher)
 
     def _motion_callback(self, msg):
         now = self._node.get_clock().now()
@@ -166,7 +166,7 @@ class EkfInterface(object):
         self._publishLandmarkMap()
 
     def _image_callback(self, msg):
-        self._orchestrator.image_handler(msg.data)
+        self._orchestrator.image_handler(msg)
 
 
     def publishOdometry(self, pose, pose_covariance):

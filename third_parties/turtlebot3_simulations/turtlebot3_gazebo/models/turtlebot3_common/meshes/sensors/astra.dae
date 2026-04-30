@@ -15,10 +15,10 @@
         <technique sid="standard">
           <phong>
             <emission>
-              <color sid="emission">0.000000  0.000000 0.000000 1.000000</color>
+              <colour sid="emission">0.000000  0.000000 0.000000 1.000000</colour>
             </emission>
             <ambient>
-              <color sid="ambient">0.156863  0.156863 0.156863 1.000000</color>
+              <colour sid="ambient">0.156863  0.156863 0.156863 1.000000</colour>
             </ambient>
             <diffuse>
               <texture texture="Map #1-image" texcoord="CHANNEL0">
@@ -32,19 +32,19 @@
               </texture>
             </diffuse>
             <specular>
-              <color sid="specular">0.684000  0.684000 0.684000 1.000000</color>
+              <colour sid="specular">0.684000  0.684000 0.684000 1.000000</colour>
             </specular>
             <shininess>
               <float sid="shininess">45.254833</float>
             </shininess>
             <reflective>
-              <color sid="reflective">0.000000  0.000000 0.000000 1.000000</color>
+              <colour sid="reflective">0.000000  0.000000 0.000000 1.000000</colour>
             </reflective>
             <reflectivity>
               <float sid="reflectivity">1.000000</float>
             </reflectivity>
             <transparent opaque="RGB_ZERO">
-              <color sid="transparent">1.000000  1.000000 1.000000 1.000000</color>
+              <colour sid="transparent">1.000000  1.000000 1.000000 1.000000</colour>
             </transparent>
             <transparency>
               <float sid="transparency">0.000000</float>

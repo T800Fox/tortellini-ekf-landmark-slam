@@ -353,7 +353,7 @@ if __name__ == "__main__":
         print("No scans found. Check the topic name.")
         exit(1)
 
-    COLORS = [
+    colourS = [
         "tab:red",
         "tab:green",
         "tab:blue",
@@ -390,20 +390,20 @@ if __name__ == "__main__":
             scan_points[:, 1],
             scan_points[:, 0],
             ".",
-            color="lightgray",
+            colour="lightgray",
             label="Raw scan",
             markersize=4,
             zorder=2,
         )
         ax.plot(
-            0, 0, "^", color="black", markersize=10, label="Sensor origin", zorder=5
+            0, 0, "^", colour="black", markersize=10, label="Sensor origin", zorder=5
         )
 
         detected = extract_circular_objects(scan_points, polar=True)
         print(f"\nScan {scan_idx + 1}: {len(detected)} circle(s) detected")
 
         for i, c in enumerate(detected):
-            color = COLORS[i % len(COLORS)]
+            colour = colourS[i % len(colourS)]
             rng, bearing = c.center
             cx = rng * np.cos(bearing)
             cy = rng * np.sin(bearing)
@@ -412,17 +412,17 @@ if __name__ == "__main__":
                 c.points[:, 1],
                 c.points[:, 0],
                 ".",
-                color=color,
+                colour=colour,
                 markersize=8,
                 label=f"Circle {i+1}: r={c.radius:.2f}m, mse={c.mse:.2e}, span={c.span:.3e}",
                 zorder=3,
             )
             ax.add_patch(
                 pltCircle(
-                    (cy, cx), c.radius, color=color, fill=False, linewidth=2, zorder=4
+                    (cy, cx), c.radius, colour=colour, fill=False, linewidth=2, zorder=4
                 )
             )
-            ax.plot(cy, cx, "+", color=color, markersize=10, zorder=5)
+            ax.plot(cy, cx, "+", colour=colour, markersize=10, zorder=5)
 
             print(
                 f"  Circle {i+1}: range={rng:.3f} m, bearing={np.degrees(bearing):.2f} deg, "

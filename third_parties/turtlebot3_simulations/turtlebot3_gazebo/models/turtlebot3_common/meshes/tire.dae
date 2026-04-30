@@ -35,7 +35,7 @@
     <light id="Light-light" name="Light">
       <technique_common>
         <point>
-          <color sid="color">1000 1000 1000</color>
+          <colour sid="colour">1000 1000 1000</colour>
           <constant_attenuation>1</constant_attenuation>
           <linear_attenuation>0</linear_attenuation>
           <quadratic_attenuation>0.00111109</quadratic_attenuation>

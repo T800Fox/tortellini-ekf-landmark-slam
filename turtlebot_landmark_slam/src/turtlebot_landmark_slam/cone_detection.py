@@ -8,7 +8,7 @@ class ConeDetection():
         self.boxes , self.warped_images, self.mask, self.debug_img = self.cone_detect_pipeline(img)
         pass
 
-    def morphological(self, frame: cv2.Mat) -> cv2.Mat:
+    def morphological(self, frame: np.ndarray) -> np.ndarray:
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (6, 6))
         #frame = cv2.morphologyEx(frame, cv2.MORPH_OPEN, kernel)
         frame = cv2.morphologyEx(frame, cv2.MORPH_CLOSE, kernel)
@@ -59,7 +59,7 @@ class ConeDetection():
 
         return merged
         
-    def cone_detection_and_extraction(self, frame: cv2.Mat, org_img: cv2.Mat, minContourRatio: float) -> list:
+    def cone_detection_and_extraction(self, frame: np.ndarray, org_img: np.ndarray, minContourRatio: float) -> list:
         contours, _ = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         # merge fragmented cone pieces
@@ -128,7 +128,7 @@ class ConeDetection():
 
         return rect
 
-    def red_mask(self, frame: cv2.Mat) -> cv2.Mat:
+    def red_mask(self, frame: np.ndarray) -> np.ndarray:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         # Red wraps around HSV -> two ranges
@@ -145,7 +145,7 @@ class ConeDetection():
 
         return mask
 
-    def green_mask(self, frame: cv2.Mat) -> cv2.Mat:
+    def green_mask(self, frame: np.ndarray) -> np.ndarray:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         lower = np.array([55, 90, 90])
@@ -155,7 +155,7 @@ class ConeDetection():
 
         return mask
 
-    def yellow_mask(self, frame: cv2.Mat) -> cv2.Mat:
+    def yellow_mask(self, frame: np.ndarray) -> np.ndarray:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         lower = np.array([22, 120, 120])
@@ -165,7 +165,7 @@ class ConeDetection():
 
         return mask
 
-    def blue_mask(self, frame: cv2.Mat) -> cv2.Mat:
+    def blue_mask(self, frame: np.ndarray) -> np.ndarray:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
         lower = np.array([90, 155, 75])
@@ -250,7 +250,7 @@ class ConeDetection():
 
     def cone_detect_pipeline(
             self,
-            img: cv2.Mat,
+            img: np.ndarray,
             min_contour_ratio: float = 0.01,
             show_debug: bool = False,
             window_name: str = "cone_detection"
@@ -319,7 +319,7 @@ class ConeDetection():
             boxes.append((box, "blue"))
 
         '''
-        # Example of how to use the color labels for further filtering or processing
+        # Example of how to use the colour labels for further filtering or processing
         [(box1,"red"), (box2,"red"), (box3,"blue")]
         '''
         
@@ -339,8 +339,8 @@ class ConeDetection():
         # Debug visualization
         debug_img = img.copy()
 
-        # OpenCV uses BGR colors
-        draw_colors = {
+        # OpenCV uses BGR colours
+        draw_colours = {
             "red": (0,0,255),
             "green": (0,255,0),
             "yellow": (0,255,255),
@@ -352,7 +352,7 @@ class ConeDetection():
                 debug_img,
                 [box],
                 -1,
-                draw_colors[label],
+                draw_colours[label],
                 2
             )
 

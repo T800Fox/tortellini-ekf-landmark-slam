@@ -5,27 +5,33 @@ import matplotlib.pyplot as plt
 import os
 import json
 from pathlib import Path
-from sklearn.cluster import DBSCAN
 
 
 class LidarProject():
-    def __init__(self, img, lidar):        
-        self.camera_k = np.array([(503.4, 0.0, 319.3), 
-                         (0.0, 505.2, 233.4), 
-                         (0.0, 0.0, 1.0)])
-        self.camera_dist = np.array([(0.2031,  -0.4606, 0.0002772, 0.0006714, 0.3447)])
-    
-        self.icp_result = np.array([[ 0.99999723,  -0.00235341, -0.07921775], 
-                           [0.00235341,  0.99999723,  0.00144672], 
-                           [ 0., 0., 1.]])
-        self.new_camera_k
-        self.new_camera_dist
+    def __init__(self, img, lidar):
+        self.camera_k = np.array([(503.4, 0.0, 319.3),
+                        (0.0, 505.2, 233.4),
+                        (0.0, 0.0, 1.0)])
+        self.camera_dist = np.array([(0.2031, -0.4606, 0.0002772, 0.0006714, 0.3447)])
+
+        self.icp_result = np.array([[ 0.99999723, -0.00235341, -0.07921775],
+                        [0.00235341,  0.99999723,  0.00144672],
+                        [ 0., 0., 1.]])
+
+        # Assign img FIRST, then use it
         self.img = img
-        
-        self.img_pts, self.lidar_pts = self.lidar_projection_pipeline(lidar)
+
+        h, w = self.img.shape[:2]
+
+        self.new_camera_k, _ = cv2.getOptimalNewCameraMatrix(
+            self.camera_k, self.camera_dist, (w, h), 1, (w, h))
+        self.new_camera_dist = np.zeros((1, 5))
+
+        self.img = cv2.undistort(
+            self.img, self.camera_k, self.camera_dist, None, self.new_camera_k)
+
+        self.img_pts, _, self.lidar_pts = self.lidar_projection_pipeline(lidar)
         self.draw_lidar_points()
-        
-        pass
     
     def plot_top_down_view(self, cam_lidar_h):
         # extract coordinates
@@ -44,10 +50,10 @@ class LidarProject():
 
         plt.show()
 
-    def lidar_to_image_projection(self, lidar, img_shape):
+    def lidar_to_image_projection(self, rel_points, img_shape):
         h, w = img_shape[:2]
         
-        pts = np.asarray(lidar.points) 
+        pts = rel_points 
         
         lidar_pts = pts[:, :2]
         
@@ -89,15 +95,8 @@ class LidarProject():
         return img_pts, cam_pts, lidar_h
 
     def lidar_projection_pipeline(self, lidar):
-        h, w = self.img.shape[:2]
 
-        # 1. Undistort camera
-        self.new_camera_k, _ = cv2.getOptimalNewCameraMatrix(self.camera_k, self.camera_dist, (w, h), 1, (w, h))
-        self.new_camera_dist = np.zeros((1, 5))
-
-        self.img = cv2.undistort(self.img, self.camera_k, self.camera_dist, None, self.new_camera_k)
-
-        # 2. Project LiDAR to camera frame
+        # Project LiDAR to camera frame
         img_pts, cam_pts, lidar_pts = self.lidar_to_image_projection(
             lidar,
             self.img.shape
@@ -116,7 +115,7 @@ class LidarProject():
         filtered_points = []
 
         for box in boxes:
-            # if boxes contain color: (box, color)
+            # if boxes contain colour: (box, colour)
             if isinstance(box, tuple):
                 box = box[0]
 

@@ -35,7 +35,7 @@
     <light id="Light-light" name="Light">
       <technique_common>
         <point>
-          <color sid="color">1000 1000 1000</color>
+          <colour sid="colour">1000 1000 1000</colour>
           <constant_attenuation>1</constant_attenuation>
           <linear_attenuation>0</linear_attenuation>
           <quadratic_attenuation>0.00111109</quadratic_attenuation>
@@ -81,10 +81,10 @@
         <technique sid="common">
           <lambert>
             <emission>
-              <color sid="emission">0 0 0 1</color>
+              <colour sid="emission">0 0 0 1</colour>
             </emission>
             <diffuse>
-              <color sid="diffuse">0.8 0.8 0.8 1</color>
+              <colour sid="diffuse">0.8 0.8 0.8 1</colour>
             </diffuse>
             <index_of_refraction>
               <float sid="ior">1.45</float>

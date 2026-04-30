@@ -25,7 +25,7 @@ class UncertaintyPlotter(object):
                                             facecolor='black',
                                             gridspec_kw={'width_ratios': [3, 1]})
 
-        self.COLORS = [
+        self.colourS = [
                 "tab:red",
                 "tab:green",
                 "tab:blue",
@@ -68,7 +68,7 @@ class UncertaintyPlotter(object):
 
         # consistent landmark colours
         for i, gm in enumerate(labeled_data):
-            labeled_data[i]['colour'] = self.COLORS[i % len(self.COLORS)]
+            labeled_data[i]['colour'] = self.colourS[i % len(self.colourS)]
 
         # gm -> gaussian matrix
         for i, gm in enumerate(labeled_data):
@@ -228,19 +228,19 @@ class UncertaintyPlotter(object):
     def _plot_enviroment(self, ax, title, x_label, y_label, x_vals, y_vals, colours):
         ax.clear()
         ax.set_facecolor('darkgrey')
-        ax.set_xlabel(x_label, fontweight='bold', color='white')
-        ax.set_ylabel(y_label, fontweight='bold', color='white')
+        ax.set_xlabel(x_label, fontweight='bold', colour='white')
+        ax.set_ylabel(y_label, fontweight='bold', colour='white')
         ax.invert_xaxis()
         ax.grid(True, linestyle=":", alpha=0.6)
-        ax.set_title(title, fontweight='bold', color='white')
+        ax.set_title(title, fontweight='bold', colour='white')
 
         ax.scatter(y_vals, x_vals, c=colours, s=300)
 
-        ax.tick_params(axis='x', colors='white')
+        ax.tick_params(axis='x', colours='white')
         for label in ax.get_xticklabels():
             label.set_fontweight('bold')
 
-        ax.tick_params(axis='y', colors='white')
+        ax.tick_params(axis='y', colours='white')
         for label in ax.get_yticklabels():
             label.set_fontweight('bold')
 
@@ -252,21 +252,21 @@ class UncertaintyPlotter(object):
         ax.clear()
         ax.set_facecolor('darkgrey')
         # ax.set_aspect("equal")
-        ax.set_xlabel(x_label, fontweight='bold', color='white')
-        ax.set_ylabel(y_label, fontweight='bold', color='white')
+        ax.set_xlabel(x_label, fontweight='bold', colour='white')
+        ax.set_ylabel(y_label, fontweight='bold', colour='white')
         ax.grid(True, linestyle=":", alpha=0.6)
-        ax.set_title(title, fontweight='bold', color='white')
+        ax.set_title(title, fontweight='bold', colour='white')
 
-        ax.bar(labels, values, color=colours)
+        ax.bar(labels, values, colour=colours)
 
         ax.set_xticks(labels)
-        ax.set_xticklabels(labels, fontweight='bold', color='white',
+        ax.set_xticklabels(labels, fontweight='bold', colour='white',
                            rotation=45, ha='right')
 
         ticks_loc = ax.get_yticks()
         ax.set_yticks(ticks_loc)
-        ax.set_yticklabels(ticks_loc, fontweight='bold', color='white')
-        # ax.set_yticklabels(ax.get_yticks(), fontweight='bold', color='white')
+        ax.set_yticklabels(ticks_loc, fontweight='bold', colour='white')
+        # ax.set_yticklabels(ax.get_yticks(), fontweight='bold', colour='white')
         # ax.set_yticks(values)
         # ax.set_yticklabels(values, fontweight='bold')
     
@@ -274,17 +274,17 @@ class UncertaintyPlotter(object):
         ax.clear()
         ax.set_facecolor('darkgrey')
         # ax.set_aspect("equal")
-        ax.set_xlabel(x_label, fontweight='bold', color='white')
-        ax.set_ylabel(y_label, fontweight='bold', color='white')
+        ax.set_xlabel(x_label, fontweight='bold', colour='white')
+        ax.set_ylabel(y_label, fontweight='bold', colour='white')
         ax.grid(True, linestyle=":", alpha=0.6)
-        ax.set_title(title, fontweight='bold', color='white')
+        ax.set_title(title, fontweight='bold', colour='white')
 
-        ax.tick_params(axis='y', colors='white')
+        ax.tick_params(axis='y', colours='white')
         for label in ax.get_yticklabels():
             label.set_fontweight('bold')
-        # ax.set_yticklabels(ax.get_yticks(), fontweight='bold', color='white')
+        # ax.set_yticklabels(ax.get_yticks(), fontweight='bold', colour='white')
 
     def plot_line(self, ax, x_data , y_data, colour):
-        ax.plot(x_data, y_data, color=colour)
+        ax.plot(x_data, y_data, colour=colour)
 
 

@@ -7,11 +7,15 @@ class LandmarkMeasurement:
     y: float
     covariance: np.array # [2x2]
 
-    lm_id: int
-    color: str = "unknown"
+    lm_id: int = -1
+    colour: str = "unknown"
 
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
+
+    @property
+    def mean(self):
+        return np.array([[self.x], [self.y]])
 
 @dataclass
 class ControlMeasurement:

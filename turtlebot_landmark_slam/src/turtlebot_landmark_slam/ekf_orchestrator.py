@@ -6,11 +6,15 @@ import pickle
 
 from geometry_msgs.msg import Twist
 from std_msgs.msg import UInt8MultiArray
+from cv_bridge import CvBridge
 
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
 from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, lidarLandmarkObserver
 from turtlebot_landmark_slam.uncertainty_plotter import UncertaintyPlotter
+from turtlebot_landmark_slam.utils import mahalanobis_distance
+
+from turtlebot_landmark_slam.landmark_perception import LandMarkPerception
 
 class EkfOrchestrator(object):
     def __init__(self, node, is_real):
@@ -18,6 +22,8 @@ class EkfOrchestrator(object):
         self.real_env = is_real
         self._lock = Lock()
         self._node = node
+
+        self._bridge = CvBridge()
 
         self.telemetry_publisher_set = False
         self.visible_landmark_publisher_set = False
@@ -42,7 +48,7 @@ class EkfOrchestrator(object):
             self.landmark_cap = 20
             self.lidar_observer = lidarLandmarkObserver(
                 show_display=False,
-                max_landmark_dist=1,
+                max_landmark_dist=5,
                 max_landmark_count=self.landmark_cap,
                 distance_threshold=0.05,    
                 min_points=4,
@@ -68,9 +74,11 @@ class EkfOrchestrator(object):
 
 
     def image_handler(self, image_data):
-        self.last_image_data = image_data
-        self.last_image_nanoseconds = self._node.get_clock().now().nanoseconds
-        pass
+        try:
+            self.last_image_data = self._bridge.imgmsg_to_cv2(image_data, desired_encoding="bgr8")
+            self.last_image_nanoseconds = self._node.get_clock().now().nanoseconds
+        except Exception as e:
+            print(f"cv_bridge conversion failed: {e}")
 
     def motion_handler(self, control_input: ControlMeasurement):
         with self._lock:
@@ -86,23 +94,75 @@ class EkfOrchestrator(object):
             if len(stored_landmarks) > self.landmark_cap:
                 raise RuntimeError(f"+{self.landmark_cap} Landmarks, Aborting.")
 
-            print("Collecting Landmark Measurements.")
+            print("Collecting Landmark Measurements....")
+            measurements = []
             # measurements = self.lidar_observer.measure_landmarks()
-            m_lidar = self.lidar_observer.measure_landmarks(pose,
-                                                                 pose_covariance, 
-                                                                 rel_points, 
-                                                                 stored_landmarks)
+
+            print("Checking LiDAR data...")
+            m_lidar = self.lidar_observer.measure_landmarks(ekf_pose=pose,
+                                                            ekf_pose_covariance=pose_covariance, 
+                                                            rel_points=rel_points, 
+                                                            ekf_landmarks=stored_landmarks)
+            
+            stored_ids = [l_s.lm_id for l_s in stored_landmarks]
+            l_existing = []
+            l_new = []
+
+            for l in m_lidar:
+                if l.lm_id in stored_ids:
+                    l_existing.append(l)
+                else:
+                    l_new.append(l)
+
+            print(f"Got {len(l_new)} new landmarks.")
+            print(f"Got {len(l_existing)} existing landmarks.")
+            
             if len(m_lidar) == 0:
-                print('empty lidar measurements')
                 return
             
-            """
-            camera_observed_landmarks = ...
-            if there's a match between a camera observed landmark and an unlabeled one, 
-            update the label and add to labeled set            
-            """
+            if self.last_image_data is None:
+                print("No camera frame yet; skipping.")
+                return
 
-            self._ekf.update(m_lidar)
+            if not self.visible_landmark_publisher_set:
+                print("No camera debug publisher set.")
+                return
+
+            frame_age = round((self._node.get_clock().now().nanoseconds - self.last_image_nanoseconds)*1e-9, 4)
+            print(f"Checking last frame; is {frame_age} seconds old")
+            m_camera = LandMarkPerception(img=self.last_image_data,
+                                          lidar=rel_points,
+                                          ekf_pose=pose,
+                                          ekf_pose_covariance=pose_covariance,
+                                          ekf_landmarks=stored_landmarks,
+                                          image_publisher=self.visible_landmark_publisher
+                                          ).landmark_measurement
+
+            print(f"Got {len(m_camera)} from frame...")
+
+            for c_m in m_camera:
+                l_closest_dist = 9999999
+                for l_m in l_new:
+                    dist = mahalanobis_distance(c_m.mean, c_m.covariance,
+                                                l_m.mean, l_m.covariance)
+                    if dist < l_closest_dist:
+                        l_closest = l_m
+                        l_closest_dist = dist
+
+                if l_closest_dist < 9.21:
+                    # 99.9% ceritanty @ 2 dof --> transfer data from camera to lidar measurement
+                    l_m.colour = c_m.colour
+
+                    measurements.append(l_m)
+                else:
+                    print(f"Could not match camera meas. @ ({c_m.mean}) w/ lidar meas.")
+
+            # currently has new values that got associated through camera
+            measurements += l_existing
+
+            print(f"Feeding {len(measurements)} into ekf update...")
+
+            self._ekf.update(measurements)
 
             t = self._node.get_clock().now().nanoseconds
             print('t -> ',t)
