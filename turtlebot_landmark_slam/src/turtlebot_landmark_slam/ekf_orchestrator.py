@@ -49,14 +49,14 @@ class EkfOrchestrator(object):
         self.landmark_cap = 20
         self.lidar_observer = LidarLandmarkObserver(
             show_display=True,
-            max_landmark_dist=1.6,
+            max_landmark_dist=0.8,
             max_landmark_count=self.landmark_cap,
-            distance_threshold=0.05,    
+            distance_threshold=0.24,    
             min_points=4,
             max_radius=0.09,        
             min_radius=0.005,           
             max_mse=1.0e-4,              
-            min_arc_angle=np.radians(90)  
+            min_arc_angle=np.radians(75)  
             )
 
 
