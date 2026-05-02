@@ -27,7 +27,7 @@ class LandMarkPerception():
         self.mahal_new_base_val = 16 # 13.82 wasn't cutting it...
         
 
-        self.total_detection = self._perform_perception(img, lidar)
+        self.total_detection, self.debug_img = self._perform_perception(img, lidar)
         
         self.landmark_measurement = self._landmark_detection(ekf_pose, ekf_pose_covariance, self.total_detection, ekf_landmarks)
 
@@ -49,11 +49,11 @@ class LandMarkPerception():
         # # img_msg = CvBridge().cv2_to_imgmsg(aruco_detect_img, encoding="bgr8")
         # self.img_pub.publish(img_msg)
 
-        try:
-            img_msg = CvBridge().cv2_to_compressed_imgmsg(lidar_projected_img)
-            self.img_pub.publish(img_msg)
-        except Exception as e:
-            print(f"ArUco -> debug image publish failed: {e}")
+        #try:
+        #    img_msg = CvBridge().cv2_to_imgmsg(lidar_projected_img, encoding="bgr8")
+        #    self.img_pub.publish(img_msg)
+        #except Exception as e:
+        #    print(f"ArUco -> debug image publish failed: {e}")
         
         r_boxes = [
             box
@@ -112,6 +112,11 @@ class LandMarkPerception():
         g_fit = extract_circular_objects(g_points)
         y_fit = extract_circular_objects(y_points)
         b_fit = extract_circular_objects(b_points)
+
+        print(f"Red points: {len(r_points)}, circles: {len(r_fit)}")
+        print(f"Green points: {len(g_points)}, circles: {len(g_fit)}")
+        print(f"Yellow points: {len(y_points)}, circles: {len(y_fit)}")
+        print(f"Blue points: {len(b_points)}, circles: {len(b_fit)}")
         
         total_fit = []
 
@@ -127,7 +132,7 @@ class LandMarkPerception():
         for c in b_fit:
             total_fit.append({"colour": "blue", "fit": c})
             
-        return total_fit
+        return total_fit, lidar_projected_img
         
     def _landmark_detection(self,  ekf_pose, 
                           ekf_pose_covariance, 
@@ -187,8 +192,20 @@ class LandMarkPerception():
                     closest_landmark = l
                     closest_dist = mahal_dist
 
-            if closest_landmark == None:
-                print("Image -> No closest landmark :(")
+            if closest_landmark is None:
+                print("Image -> No closest landmark → treating as NEW")
+
+                measurement_of_new_landmark = LandmarkMeasurement(
+                    x=d.center[0],
+                    y=d.center[1],
+                    covariance=d_xy_covariance,
+                    lm_id=next_new_id,
+                    colour=colour
+                )
+                measurement_of_new_landmark.set_colour(colour)
+                landmark_measurements.append(measurement_of_new_landmark)
+
+                next_new_id += 1
                 continue
 
             print(f"\tImage -> Closest Landmark is {closest_landmark.lm_id} --> "

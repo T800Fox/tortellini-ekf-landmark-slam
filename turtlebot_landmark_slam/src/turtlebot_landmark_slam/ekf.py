@@ -148,7 +148,8 @@ class ExtendedKalmanFilter(object):
                     abs_y=landmark_measured_abs[1],
                     covariance=landmark_covariance,
                     index=index,
-                    lm_id=landmark_measurement.lm_id
+                    lm_id=landmark_measurement.lm_id,
+                    aruco_id=landmark_measurement.aruco_id
                 )
                 new_stored.set_colour(landmark_measurement.colour)
                 self._tracked_landmarks.append(new_stored)

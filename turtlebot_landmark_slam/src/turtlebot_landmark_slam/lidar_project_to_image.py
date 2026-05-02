@@ -110,12 +110,11 @@ class LidarProject():
             cv2.circle(self.img, (u, v), 1, (0, 0, 255), -1)
         return self.img
     
-    def extract_depth_in_box(self, boxes, min_points=4):
+    def extract_depth_in_box(self, boxes, min_points=4, margin=20):
         
         filtered_points = []
 
         for box in boxes:
-            # if boxes contain colour: (box, colour)
             if isinstance(box, tuple):
                 box = box[0]
 
@@ -124,7 +123,12 @@ class LidarProject():
             for (p, P3D) in zip(self.img_pts, self.lidar_pts):
                 u, v = map(float, p.ravel())
 
-                if cv2.pointPolygonTest(box, (u, v), False) >= 0:
+                # distance > 0  -> inside
+                # distance < 0  -> outside
+                # abs(distance) <= margin -> near boundary
+                dist = cv2.pointPolygonTest(box, (u, v), True)
+
+                if dist >= -margin:
                     selected_points.append(P3D)
 
             if len(selected_points) >= min_points:

@@ -68,10 +68,9 @@ class EkfOrchestrator(object):
 
     def image_handler(self, image_data):
         import cv2
-
-
         try:
-            self.last_image_data = self._bridge.compressed_imgmsg_to_cv2(image_data, desired_encoding="bgr8")
+            # Change 'compressed_imgmsg_to_cv2' to 'imgmsg_to_cv2'
+            self.last_image_data = self._bridge.imgmsg_to_cv2(image_data, desired_encoding="bgr8")
             self.last_image_nanoseconds = self._node.get_clock().now().nanoseconds
         except Exception as e:
             print(f"cv_bridge conversion failed: {e}")
@@ -129,21 +128,26 @@ class EkfOrchestrator(object):
             frame_age = round((self._node.get_clock().now().nanoseconds - self.last_image_nanoseconds)*1e-9, 4)
             print(f"Checking last frame; is {frame_age} seconds old")
 
-            m_camera_aruco = ArucoPerception(self.last_image_data,
+            camera_colour = LandMarkPerception(img=self.last_image_data,
+                                lidar=rel_points,
+                                ekf_pose=pose,
+                                ekf_pose_covariance=pose_covariance,
+                                ekf_landmarks=stored_landmarks,
+                                image_publisher=self.visible_landmark_publisher)
+            
+            m_camera_colour = camera_colour.landmark_measurement
+
+            m_camera_aruco = ArucoPerception(camera_colour.debug_img,
                                        rel_points,
                                        pose,
                                        pose_covariance,
                                        stored_landmarks,
                                        self.visible_landmark_publisher,
-                                       debugging=False,
-                                       aruco_dict=cv2.aruco.DICT_5X5_50).landmark_measurements
+                                       debugging=False
+                                       #aruco_dict=cv2.aruco.DICT_5X5_50
+                                       ).landmark_measurements
 
-            m_camera_colour = LandMarkPerception(img=self.last_image_data,
-                                          lidar=rel_points,
-                                          ekf_pose=pose,
-                                          ekf_pose_covariance=pose_covariance,
-                                          ekf_landmarks=stored_landmarks,
-                                          image_publisher=self.visible_landmark_publisher).landmark_measurement
+
 
             print(f"Got {len(m_camera_colour)} from frame colour...")
 
@@ -180,7 +184,7 @@ class EkfOrchestrator(object):
 
 
 
-            measurements = m_lidar
+            #measurements = m_lidar
             # currently has new values that got associated through camera
             measurements += l_existing 
 
