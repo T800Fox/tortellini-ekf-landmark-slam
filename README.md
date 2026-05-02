@@ -32,3 +32,5 @@ Go into ```~/.bashrc``` with your editor of choice and make sure that these thin
 
 **Steps 3 to 5 would ideally be done in their own window's on sessions that are sitting in the workspace folder and have sourced install/setup.bash**
 
+ARUCO BAG LINK:
+https://drive.google.com/drive/folders/1A5riyRHajXPo_KgyJ3WDC2uVb-IS-64c?usp=drive_link
