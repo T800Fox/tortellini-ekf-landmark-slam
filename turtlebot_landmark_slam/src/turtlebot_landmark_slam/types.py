@@ -7,9 +7,10 @@ class LandmarkMeasurement:
     y: float
     covariance: np.array # [2x2]
  
+    # optional values at initialisation
     lm_id: int = -1
     colour: str = "unknown"
-    aruco_id: int = -1  # -1 means "no tag info / not from ArUco observer"
+    aruco_id: int = -1  
  
     def __str__(self):
         return f"x: {self.x} y: {self.y} id: {self.id} cov: {self.covariance}"
@@ -40,21 +41,18 @@ class StoredLandmark:
     abs_x: float    # x component of abs. landmark coords.
     abs_y: float    # y component of abs. landmark coords.
     covariance: np.array # [2x2]
- 
-    innovation_x=0.0
-    innovation_y=0.0
- 
+    
     index: int      # index in state variable
     lm_id: int      # name of landmark
+
+    # values refresh during update step, not set @ init
+    innovation_x: float = 0.0 
+    innovation_y: float = 0.0
+    
+    # not always known, lidar is 1st source of measurement
     colour: str = 'unknown'
     aruco_id: int = -1
-    label="NULL"
-    
-    radius=0.1      # plot patch radius
- 
-    aruco_id: int = -1  # -1 means "no tag info"; set when the EKF first
-                        # ingests a measurement from ArucoPerception
- 
+
     @property
     def mean(self):
         return (self.abs_x, self.abs_y)
