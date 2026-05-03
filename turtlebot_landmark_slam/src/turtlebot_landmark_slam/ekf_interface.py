@@ -1,3 +1,11 @@
+"""
+MTRX4701 2026 Assignment 3: Simultaneous Localisation and Mapping
+File: ekf_interface.py
+Author(s): 530 499 451, 530147596
+
+This module acts as the bridge between the ROS2 layer of the system and the ekf/landmark perception layer.
+"""
+
 import numpy as np
 import math
 from typing import Tuple
