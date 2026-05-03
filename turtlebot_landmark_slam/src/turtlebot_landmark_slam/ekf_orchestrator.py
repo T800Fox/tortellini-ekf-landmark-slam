@@ -1,3 +1,13 @@
+"""
+MTRX4701 2026 Assignment 3: Simultaneous Localisation and Mapping
+File: ekf_orchestrator.py
+Author(s): 530 499 451, 530147596
+
+This module sits the layer below the EKF Interface node and handles,
+- Information from different modes of Landmark Perception are Fused.
+- What data gets fed into the Extended Kalman Filter Module
+"""
+
 from threading import Lock
 import numpy as np
 from sys import exit
@@ -11,14 +21,13 @@ import cv2
 
 from turtlebot_landmark_slam.types import ControlMeasurement
 from turtlebot_landmark_slam.ekf import ExtendedKalmanFilter
-from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, LidarLandmarkObserver
-from turtlebot_landmark_slam.aruco_perception import ArucoPerception
-from turtlebot_landmark_slam.uncertainty_plotter import UncertaintyPlotter
 from turtlebot_landmark_slam.utils import mahalanobis_distance
 
+from turtlebot_landmark_slam.landmarks import SimLandmarkObserver, LidarLandmarkObserver
 from turtlebot_landmark_slam.landmark_perception import LandMarkPerception
+from turtlebot_landmark_slam.aruco_perception import ArucoPerception
 
-from turtlebot_landmark_slam.landmark_perception import LandMarkPerception
+from turtlebot_landmark_slam.uncertainty_plotter import UncertaintyPlotter
 
 class EkfOrchestrator(object):
     def __init__(self, node, is_real):
@@ -182,10 +191,7 @@ class EkfOrchestrator(object):
                     # 99.9% ceritanty @ 2 dof --> transfer data from camera to lidar measurement
                     l_m.aruco_id = c_m_a.aruco_id
 
-
-
-            #measurements = m_lidar
-            # currently has new values that got associated through camera
+            # currently only has new values that got associated through camera
             measurements += l_existing 
 
             print(f"Feeding {len(measurements)} into ekf update...")
@@ -208,10 +214,6 @@ class EkfOrchestrator(object):
                 telem_msg.data = list(serialized_telemetry)
                 self.telemetry_publisher.publish(telem_msg)
 
-            # self.u_plotter.plot_system(pose=self._ekf.pose,
-            #                            pose_covar=self._ekf.pose_covariance,
-            #                            landmarks=self._ekf.tracked_landmarks, 
-            #                            t=t)
 
     def handover_telem_publisher(self, publisher):
         self.telemetry_publisher = publisher
