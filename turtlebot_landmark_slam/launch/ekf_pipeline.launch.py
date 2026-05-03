@@ -29,7 +29,11 @@ def generate_launch_description():
                 executable="ekf_pipeline_node.py",
                 name="ekf",
                 output="screen",
-                parameters=[{"is_real": ParameterValue(is_real, value_type=bool)}],
+                parameters=[{
+                    "is_real": ParameterValue(is_real, value_type=bool),
+                    "std_dev_linear_vel": 0.01,         # std dev lin v
+                    "std_dev_angular_vel": 0.05,       # std dev ang v
+                }],
                 remappings=[
                     ("~/landmarks", "/landmarks"),
                     ("~/gt_odom", "/odom"),

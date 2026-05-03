@@ -27,16 +27,17 @@ def generate_launch_description():
                     ("~/odom", "/odom"),
                 ],
             ),
-            Node(
-                package="turtlebot_landmark_slam",
-                executable="landmark_publisher_sim.py",
-                name="landmark_publisher_sim",
-                output="screen",
-                parameters=[{"std_dev_landmark_x": 0.01, "std_dev_landmark_y": 0.01}],
-                remappings=[
-                    ("~/odom", "/odom"),
-                    ("~/landmarks", "/landmarks"),
-                ],
-            ),
+             Node(
+                 package="turtlebot_landmark_slam",
+                 executable="landmark_publisher_sim.py",
+                 name="landmark_publisher_sim",
+                 output="screen",
+                 # std dev landmarks
+                 parameters=[{"std_dev_landmark_x": 0.01, "std_dev_landmark_y": 0.01}],
+                 remappings=[
+                     ("~/odom", "/odom"),
+                     ("~/landmarks", "/landmarks"),
+                 ],
+             ),
         ]
     )

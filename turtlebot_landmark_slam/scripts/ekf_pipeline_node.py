@@ -21,6 +21,13 @@ def main(args=None) -> None:
     try:
         executor.spin()
     finally:
+        import csv
+        with open("covariance_log.csv", "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["update_step", "landmark_label", "cov_x", "cov_y", "NIS"])
+            writer.writerows(node.pipeline._ekf.covariance_log)
+        print("Covariance log saved to covariance_log.csv")
+
         executor.remove_node(node)
         node.destroy_node()
         rclpy.shutdown()

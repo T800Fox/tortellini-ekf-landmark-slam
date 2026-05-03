@@ -1,0 +1,16 @@
+
+xy
+low noise Error: 0.032673468679580944
+
+meas noiseError: 0.13746272221951666
+
+proc noiseError: 0.08573473301086576
+
+
+rb
+low noise Error: 0.04747865017270623
+
+meas noise Error: 0.05102831458013177
+
+proc noise Error: 0.235107067808123
+

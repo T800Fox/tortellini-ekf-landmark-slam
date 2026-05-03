@@ -16,7 +16,7 @@ import rosbag2_py
 from rclpy.serialization import deserialize_message
 from sensor_msgs.msg import LaserScan, PointCloud
 
-from landmarks_circle_detector import cluster_points
+from turtlebot_landmark_slam.src.turtlebot_landmark_slam.landmark_observers import cluster_points
 
 COLORS = plt.cm.tab10.colors
 

@@ -57,6 +57,7 @@ class Pipeline(object):
 
     def controlHandler(self, control_measurement: ControlMeasurement):
         """Run the EKF predict step on each incoming control measurement."""
+        print("pipeline control handler fired.")
         with self._lock:
             self._last_odom_time = self._node.get_clock().now().to_msg()
             self._ekf.predict(control_measurement)
@@ -67,6 +68,8 @@ class Pipeline(object):
             is_new = landmark_measurement.label not in self._seen_landmarks
             if is_new:
                 self._seen_landmarks.add(landmark_measurement.label)
+
+            print("Feeding Measurement ->", landmark_measurement)
             self._ekf.update(landmark_measurement, is_new)
 
     # ------------------------------------------------------------------
@@ -78,7 +81,9 @@ class Pipeline(object):
 
     def publishState(self):
         """Publish the current EKF state as an Odometry message and a landmark MarkerArray."""
+        print("publish state called...")
         if self._last_odom_time is None:
+            print("blocked due to no last odom.")
             return
 
         self._publishOdometry()
