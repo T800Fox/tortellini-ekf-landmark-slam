@@ -1,7 +1,9 @@
 """
 MTRX4701 2026 Assignment 3: Simultaneous Localisation and Mapping
 File: aruco_perception.py
-Author(s): 530 499 451
+Author(s): Claude Sonnet 4.7 --(prompted by)--> 530 499 451
+
+Please see the report appendix for the prompt that was used...
 
 ArUco-tag-based landmark perception module.
 
